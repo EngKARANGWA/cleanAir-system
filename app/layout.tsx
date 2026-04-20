@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -19,8 +20,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-serif">{children}</body>
+    <html lang="en" className={`${playfair.variable} h-full`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-serif">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||t===null)document.documentElement.classList.add('dark');}catch(e){}})()`,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

@@ -17,8 +17,8 @@ export default function StepCard({ step, label, desc, icon, isLast = false }: St
         <div className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2 py-0.5 rounded-full mb-1">
           Step {step}
         </div>
-        <p className="font-semibold text-sm">{label}</p>
-        <p className="text-slate-400 text-xs mt-1">{desc}</p>
+        <p className="font-semibold text-sm text-slate-900 dark:text-white">{label}</p>
+        <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{desc}</p>
       </div>
       {!isLast && (
         <ChevronRight className="text-slate-600 w-6 h-6 hidden md:block" />

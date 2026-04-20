@@ -44,8 +44,8 @@ const features = [
 export default function FeaturesSection() {
   return (
     <section id="features" className="px-8 py-20 max-w-6xl mx-auto">
-      <h2 className="text-3xl font-bold text-center mb-4">System Features</h2>
-      <p className="text-slate-400 text-center mb-12">
+      <h2 className="text-3xl font-bold text-center mb-4 text-slate-900 dark:text-white">System Features</h2>
+      <p className="text-slate-500 dark:text-slate-400 text-center mb-12">
         Everything you need to monitor and reduce CO emissions
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -10,7 +10,7 @@ const stats = [
 export default function StatsSection() {
   return (
     <section id="stats" className="px-8 py-20 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-center mb-12">Expected Impact</h2>
+      <h2 className="text-3xl font-bold text-center mb-12 text-slate-900 dark:text-white">Expected Impact</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((s) => (
           <StatCard key={s.label} {...s} />

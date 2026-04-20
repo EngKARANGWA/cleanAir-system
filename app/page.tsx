@@ -8,7 +8,7 @@ import CTASection from "./sections/CTASection";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white pt-20">
+    <main className="min-h-screen bg-slate-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 text-slate-900 dark:text-white pt-20">
       <Navbar />
       <HeroSection />
       <FeaturesSection />

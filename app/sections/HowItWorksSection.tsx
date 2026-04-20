@@ -36,10 +36,10 @@ const steps = [
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="px-8 py-20 bg-white/[0.02]">
+    <section id="how-it-works" className="px-8 py-20 bg-slate-100 dark:bg-white/[0.02]">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
-        <p className="text-slate-400 text-center mb-12">
+        <h2 className="text-3xl font-bold text-center mb-4 text-slate-900 dark:text-white">How It Works</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-center mb-12">
           From exhaust pipe to clean air in seconds
         </p>
         <div className="flex flex-col md:flex-row items-start justify-between gap-4">
