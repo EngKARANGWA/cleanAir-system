@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const ADMIN_ONLY = ["/dashboard/users", "/dashboard/settings"];
 const OPERATOR_BLOCKED = ["/dashboard/users", "/dashboard/settings"];
-const VIEWER_ALLOWED = ["/dashboard", "/dashboard/devices"];
+const VIEWER_ALLOWED = [
+  "/dashboard",
+  "/dashboard/devices",
+  "/dashboard/dashboards/view",
+];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();

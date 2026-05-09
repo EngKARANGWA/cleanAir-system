@@ -16,12 +16,12 @@ import {
 } from "lucide-react";
 
 const ALL_NAV = [
-  { label: "Overview", href: "/dashboard",          icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"] },
-  { label: "Devices",  href: "/dashboard/devices",  icon: Cpu,             roles: ["ADMIN", "OPERATOR", "VIEWER"] },
-  { label: "Users",    href: "/dashboard/users",    icon: Users,           roles: ["ADMIN"] },
-  { label: "History",  href: "/dashboard/history",  icon: History,         roles: ["ADMIN", "OPERATOR"] },
-  { label: "Alerts",   href: "/dashboard/alerts",   icon: BellRing,        roles: ["ADMIN", "OPERATOR"] },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings,        roles: ["ADMIN"] },
+  { label: "Overview",              href: "/dashboard",                          icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
+  { label: "Devices",               href: "/dashboard/devices",                  icon: Cpu,             roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
+  { label: "Users",                 href: "/dashboard/users",                    icon: Users,           roles: ["ADMIN"],                       group: "main" },
+  { label: "History",               href: "/dashboard/history",                  icon: History,         roles: ["ADMIN", "OPERATOR"],            group: "main" },
+  { label: "Alerts",                href: "/dashboard/alerts",                   icon: BellRing,        roles: ["ADMIN", "OPERATOR"],            group: "main" },
+  { label: "Settings",              href: "/dashboard/settings",                 icon: Settings,        roles: ["ADMIN"],                       group: "main" },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
@@ -85,24 +85,27 @@ export default function DashboardSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                active
-                  ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        <div className="space-y-1">
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  active
+                    ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
       </nav>
 
       {/* Footer Actions */}
@@ -115,6 +118,7 @@ export default function DashboardSidebar() {
           Back to site
         </Link>
         <button
+          type="button"
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
         >

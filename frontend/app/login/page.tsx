@@ -8,6 +8,7 @@ import DarkModeToggle from "../components/DarkModeToggle";
 import PageBackground from "../components/PageBackground";
 import { api } from "../../lib/api";
 import { auth } from "../../lib/auth";
+import { checkMockCredentials } from "../../lib/mockUsers";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,19 +33,35 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
+  const getDashboardRoute = (role: string) => {
+    switch (role.toUpperCase()) {
+      case "OPERATOR": return "/dashboard/dashboards/operational";
+      case "VIEWER":   return "/dashboard/dashboards/view";
+      default:         return "/dashboard";
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      const data = await api.auth.login(email, password);
+      // Check mock credentials first (works without backend)
+      const mockUser = checkMockCredentials(email, password);
+      if (mockUser) {
+        auth.set(mockUser);
+        router.push(getDashboardRoute(mockUser.role));
+        return;
+      }
 
+      // Fall back to backend
+      const data = await api.auth.login(email, password);
       if (data.requiresReset) {
         router.push(`/reset-password?email=${encodeURIComponent(data.email ?? email)}`);
       } else {
         auth.set(data.user!);
-        router.push("/dashboard");
+        router.push(getDashboardRoute(data.user!.role));
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Invalid credentials");

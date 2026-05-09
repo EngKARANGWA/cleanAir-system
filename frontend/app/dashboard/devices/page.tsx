@@ -1,8 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { devices } from "./data";
 import DeviceCard from "./components/DeviceCard";
 import DarkModeToggle from "../../components/DarkModeToggle";
+import NotificationBell from "../components/NotificationBell";
 
 const summary = {
   total:   devices.length,
@@ -12,6 +16,18 @@ const summary = {
 };
 
 export default function DevicesPage() {
+  const [role] = useState<string>(() => {
+    if (typeof window === "undefined") return "VIEWER";
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return (user.role ?? "VIEWER").toUpperCase();
+    } catch {
+      return "VIEWER";
+    }
+  });
+
+  const isViewer = role === "VIEWER";
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -24,13 +40,17 @@ export default function DevicesPage() {
         </div>
         <div className="flex items-center gap-3">
           <DarkModeToggle />
-          <Link
-            href="/dashboard/devices/add"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Device
-          </Link>
+          {isViewer ? (
+            <NotificationBell />
+          ) : (
+            <Link
+              href="/dashboard/devices/add"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Device
+            </Link>
+          )}
         </div>
       </div>
 

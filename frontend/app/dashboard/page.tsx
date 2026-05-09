@@ -7,6 +7,7 @@ import AlertsList from "./components/AlertsList";
 import ReadingsTable from "./components/ReadingsTable";
 import DarkModeToggle from "../components/DarkModeToggle";
 import DeviceCard from "./devices/components/DeviceCard";
+import OperatorPanel from "./components/OperatorPanel";
 import { devices } from "./devices/data";
 
 const ROLE_STYLE: Record<string, string> = {
@@ -35,6 +36,30 @@ export default function DashboardPage() {
 
   const role = (user?.role ?? "VIEWER").toUpperCase();
   const displayName = user?.name ?? user?.email ?? "User";
+
+  // Operator gets a dedicated operational dashboard
+  if (role === "OPERATOR") {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-end justify-between">
+          <div />
+          <DarkModeToggle />
+        </div>
+        <OperatorPanel operatorName={displayName} />
+        {/* Sensor metrics below the operator panel */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Live Sensor Readings</h2>
+          <div className="grid grid-cols-4 gap-4">
+            <MetricCard title="CO Input Level"     value="440"  unit="ppm" accent="red"    />
+            <MetricCard title="After Purification" value="218"  unit="ppm" accent="green"  />
+            <MetricCard title="Purification Rate"  value="50.5" unit="%"   accent="blue"   />
+            <MetricCard title="Sensor Uptime"      value="99.2" unit="%"   accent="purple" />
+          </div>
+        </div>
+        <COChart />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
