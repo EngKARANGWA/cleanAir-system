@@ -8,6 +8,7 @@ import ReadingsTable from "./components/ReadingsTable";
 import DarkModeToggle from "../components/DarkModeToggle";
 import DeviceCard from "./devices/components/DeviceCard";
 import OperatorPanel from "./components/OperatorPanel";
+import NotificationBell from "./components/NotificationBell";
 import { devices } from "./devices/data";
 
 const ROLE_STYLE: Record<string, string> = {
@@ -43,7 +44,10 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex items-end justify-between">
           <div />
-          <DarkModeToggle />
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <DarkModeToggle />
+          </div>
         </div>
         <OperatorPanel operatorName={displayName} />
         {/* Sensor metrics below the operator panel */}
@@ -83,6 +87,7 @@ export default function DashboardPage() {
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-sm font-medium text-green-600 dark:text-green-400">ESP32 Online</span>
           </div>
+          <NotificationBell />
           <DarkModeToggle />
         </div>
       </div>

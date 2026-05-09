@@ -56,13 +56,6 @@ export default function Navbar() {
             <LogIn className="w-4 h-4" />
             Login
           </Link>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/25"
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </Link>
         </div>
 
         {/* Mobile Menu Button */}
