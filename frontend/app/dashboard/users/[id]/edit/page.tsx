@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import DarkModeToggle from "../../../../components/DarkModeToggle";
+import { api } from "../../../../../lib/api";
 
 export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,23 +24,15 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/admin/users/${id}`);
-        if (!res.ok) {
-          if (res.status === 404) {
-            router.push('/404');
-            return;
-          }
-          throw new Error("Failed to fetch user");
-        }
-        const data = await res.json();
+        const data = await api.users.get(id);
         setForm({
           name: data.name || "",
           email: data.email || "",
           role: data.role || "VIEWER",
           status: data.status || "ACTIVE",
         });
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to fetch user");
       } finally {
         setIsLoading(false);
       }
@@ -55,21 +48,11 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
     setError("");
     setIsSaving(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update user");
-      }
-
+      await api.users.update(id, form);
       router.push("/dashboard/users");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setIsSaving(false);
     }
@@ -112,18 +95,18 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Full Name</label>
-          <input className={inputClass} value={form.name} onChange={set("name")} />
+          <input title="Full Name" placeholder="Full name" className={inputClass} value={form.name} onChange={set("name")} />
         </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Email Address</label>
-          <input type="email" className={inputClass} value={form.email} onChange={set("email")} />
+          <input type="email" title="Email Address" placeholder="Email address" className={inputClass} value={form.email} onChange={set("email")} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Role</label>
-            <select className={inputClass} value={form.role} onChange={set("role")}>
+            <select title="Role" className={inputClass} value={form.role} onChange={set("role")}>
               <option value="ADMIN">Admin</option>
               <option value="OPERATOR">Operator</option>
               <option value="VIEWER">Viewer</option>
@@ -131,7 +114,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</label>
-            <select className={inputClass} value={form.status} onChange={set("status")}>
+            <select title="Status" className={inputClass} value={form.status} onChange={set("status")}>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
               <option value="SUSPENDED">Suspended</option>

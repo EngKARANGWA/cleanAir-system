@@ -6,6 +6,8 @@ import Link from "next/link";
 import { User, Eye, EyeOff, Wind } from "lucide-react";
 import DarkModeToggle from "../components/DarkModeToggle";
 import PageBackground from "../components/PageBackground";
+import { api } from "../../lib/api";
+import { auth } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,26 +38,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Invalid credentials");
-      }
+      const data = await api.auth.login(email, password);
 
       if (data.requiresReset) {
-        router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
+        router.push(`/reset-password?email=${encodeURIComponent(data.email ?? email)}`);
       } else {
-        localStorage.setItem("user", JSON.stringify(data.user));
+        auth.set(data.user!);
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Invalid credentials");
     } finally {
       setIsLoading(false);
     }

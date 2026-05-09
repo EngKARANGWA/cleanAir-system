@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+const ADMIN_ONLY = ["/dashboard/users", "/dashboard/settings"];
+const OPERATOR_BLOCKED = ["/dashboard/users", "/dashboard/settings"];
+const VIEWER_ALLOWED = ["/dashboard", "/dashboard/devices"];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
@@ -16,17 +21,31 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     try {
       const user = JSON.parse(userJson);
+
       if (user.status !== "ACTIVE") {
         localStorage.removeItem("user");
         router.push("/login");
         return;
       }
+
+      const role = (user.role ?? "VIEWER").toUpperCase();
+
+      if (role === "OPERATOR" && OPERATOR_BLOCKED.some((r) => pathname.startsWith(r))) {
+        router.push("/dashboard");
+        return;
+      }
+
+      if (role === "VIEWER" && !VIEWER_ALLOWED.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+        router.push("/dashboard");
+        return;
+      }
+
       setIsAuthorized(true);
     } catch (e) {
       localStorage.removeItem("user");
       router.push("/login");
     }
-  }, [router]);
+  }, [router, pathname]);
 
   if (!isAuthorized) {
     return (

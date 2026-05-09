@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, ChevronLeft, Wind, AlertCircle, CheckCircle2 } from "lucide-react";
+import { api } from "../../lib/api";
 
 const rand = (seed: number) => { const x = Math.sin(seed + 1) * 10000; return x - Math.floor(x); };
 const STARS = Array.from({ length: 120 }, (_, i) => ({
@@ -33,22 +34,11 @@ export default function ForgotPasswordPage() {
     setSuccess("");
 
     try {
-      const res = await fetch("http://localhost:3001/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Something went wrong");
-      }
-
-      setSuccess(data.message);
+      const data = await api.auth.forgotPassword(email) as { message?: string };
+      setSuccess(data.message ?? "Reset link sent — check your email.");
       setEmail("");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setIsLoading(false);
     }

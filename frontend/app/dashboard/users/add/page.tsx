@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import DarkModeToggle from "../../../components/DarkModeToggle";
+import { api } from "../../../../lib/api";
 
 export default function AddUserPage() {
   const [form, setForm] = useState({
@@ -23,23 +24,11 @@ export default function AddUserPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          role: form.role,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create user");
-
+      await api.users.create({ name: form.name, email: form.email, role: form.role });
       setSuccess("User created successfully! Welcome email sent.");
       setForm({ name: "", email: "", role: "VIEWER", status: "ACTIVE" });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
     } finally {
       setIsLoading(false);
     }

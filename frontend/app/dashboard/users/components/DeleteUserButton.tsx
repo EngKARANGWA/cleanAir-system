@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { api } from "../../../../lib/api";
 
 export default function DeleteUserButton({ id }: { id: string }) {
   const router = useRouter();
@@ -13,14 +14,7 @@ export default function DeleteUserButton({ id }: { id: string }) {
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/users/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete user");
-      }
-
+      await api.users.remove(id);
       router.refresh();
     } catch (err) {
       console.error(err);

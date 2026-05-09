@@ -5,6 +5,8 @@ import {
   Bell, Shield, Wifi, Database, User, Save, Eye, EyeOff,
 } from "lucide-react";
 import DarkModeToggle from "../../components/DarkModeToggle";
+import { api } from "../../../lib/api";
+import { auth } from "../../../lib/auth";
 
 const inputClass =
   "w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all";
@@ -41,18 +43,19 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
+function Toggle({ enabled, onChange, label }: { enabled: boolean; onChange: () => void; label: string }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      onClick={onChange}
-      aria-label="Toggle setting"
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${enabled ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-600"}`}
-    >
-      <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${enabled ? "translate-x-6" : "translate-x-1"}`} />
-    </button>
+    <label className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center">
+      <input
+        type="checkbox"
+        className="sr-only peer"
+        checked={enabled}
+        onChange={onChange}
+        aria-label={label}
+      />
+      <span className={`h-6 w-11 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-2 dark:peer-focus:ring-offset-slate-800 ${enabled ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-600"}`} />
+      <span className={`absolute h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${enabled ? "translate-x-6" : "translate-x-1"}`} />
+    </label>
   );
 }
 
@@ -71,22 +74,14 @@ export default function SettingsPage() {
   const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
-      const user = JSON.parse(userJson);
-      fetch(`http://localhost:3001/api/admin/users/${user.id}`)
-        .then((res) => res.json())
+    const user = auth.get();
+    if (user) {
+      api.users.get(user.id)
         .then((data) => {
-          setProfile({
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            phone: data.phone || "",
-            password: "", // We don't fetch the password hash
-          });
+          setProfile({ id: data.id, name: data.name, email: data.email, phone: data.phone || "", password: "" });
           setIsLoading(false);
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error("Failed to fetch profile:", err);
           setIsLoading(false);
         });
@@ -105,7 +100,7 @@ export default function SettingsPage() {
     interval: "3", retention: "90", timezone: "Africa/Kigali",
   });
 
-  const [api, setApi] = useState({
+  const [apiSettings, setApiSettings] = useState({
     endpoint: "https://api.cleanair.rw/v1", key: "sk-live-••••••••••••••••",
   });
 
@@ -131,22 +126,10 @@ export default function SettingsPage() {
         body.password = profile.password;
       }
 
-      const res = await fetch(`http://localhost:3001/api/admin/users/${profile.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to update profile");
-      }
-
-      // Update local storage with new info
-      localStorage.setItem("user", JSON.stringify(data));
+      const data = await api.users.update(profile.id, body);
+      auth.set(data);
       setMessage({ text: "Profile updated successfully!", type: "success" });
-      setProfile((prev) => ({ ...prev, password: "" })); // Clear password field
+      setProfile((prev) => ({ ...prev, password: "" }));
     } catch (err: unknown) {
       setMessage({ text: err instanceof Error ? err.message : "Failed to update profile", type: "error" });
     } finally {
@@ -275,6 +258,7 @@ export default function SettingsPage() {
                 <Toggle
                   enabled={notifications[key]}
                   onChange={() => setNotifications((n) => ({ ...n, [key]: !n[key] }))}
+                  label={labels[key].label}
                 />
               </div>
             </Field>
@@ -318,11 +302,11 @@ export default function SettingsPage() {
       {/* API */}
       <Section icon={<Database className="w-4 h-4 text-purple-500" />} title="API & Integration" desc="Backend endpoint and authentication key for ESP32 devices">
         <Field label="API Endpoint">
-          <input title="API Endpoint" className={inputClass} value={api.endpoint} onChange={(e) => setApi((a) => ({ ...a, endpoint: e.target.value }))} />
+          <input title="API Endpoint" className={inputClass} value={apiSettings.endpoint} onChange={(e) => setApiSettings((a) => ({ ...a, endpoint: e.target.value }))} />
         </Field>
         <Field label="API Key" hint="Used by ESP32 devices to authenticate">
           <div className="flex items-center gap-2">
-            <input title="API Key" className={inputClass} value={api.key} readOnly />
+            <input title="API Key" className={inputClass} value={apiSettings.key} readOnly />
             <button type="button" className="shrink-0 px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
               Rotate
             </button>

@@ -4,11 +4,11 @@ import { RoleBadge, StatusBadge } from "./components/RoleBadge";
 import DeleteUserButton from "./components/DeleteUserButton";
 import DarkModeToggle from "../../components/DarkModeToggle";
 
+import { api } from "../../../lib/api";
+
 async function fetchUsers() {
   try {
-    const res = await fetch("http://localhost:3001/api/admin/users", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch users");
-    return res.json();
+    return await api.users.list();
   } catch (err) {
     console.error(err);
     return [];

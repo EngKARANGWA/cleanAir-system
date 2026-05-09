@@ -15,19 +15,26 @@ import {
   LogOut,
 } from "lucide-react";
 
-const navItems = [
-  { label: "Overview", href: "/dashboard",         icon: LayoutDashboard },
-  { label: "Devices",  href: "/dashboard/devices", icon: Cpu },
-  { label: "Users",    href: "/dashboard/users",   icon: Users },
-  { label: "History",  href: "/dashboard/history", icon: History },
-  { label: "Alerts",   href: "/dashboard/alerts",  icon: BellRing },
-  { label: "Settings", href: "/dashboard/settings",icon: Settings },
+const ALL_NAV = [
+  { label: "Overview", href: "/dashboard",          icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"] },
+  { label: "Devices",  href: "/dashboard/devices",  icon: Cpu,             roles: ["ADMIN", "OPERATOR", "VIEWER"] },
+  { label: "Users",    href: "/dashboard/users",    icon: Users,           roles: ["ADMIN"] },
+  { label: "History",  href: "/dashboard/history",  icon: History,         roles: ["ADMIN", "OPERATOR"] },
+  { label: "Alerts",   href: "/dashboard/alerts",   icon: BellRing,        roles: ["ADMIN", "OPERATOR"] },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings,        roles: ["ADMIN"] },
 ];
+
+const ROLE_BADGE: Record<string, string> = {
+  ADMIN:    "bg-purple-500/10 text-purple-500",
+  OPERATOR: "bg-blue-500/10 text-blue-500",
+  VIEWER:   "bg-slate-500/10 text-slate-400",
+};
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState("VIEWER");
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -35,11 +42,14 @@ export default function DashboardSidebar() {
       try {
         const user = JSON.parse(userJson);
         setUserEmail(user.email);
+        setUserRole((user.role ?? "VIEWER").toUpperCase());
       } catch (e) {
         console.error("Failed to parse user data", e);
       }
     }
   }, []);
+
+  const navItems = ALL_NAV.filter((item) => item.roles.includes(userRole));
 
   const handleLogout = () => {
     // Clear local/session storage auth tokens
@@ -63,6 +73,11 @@ export default function DashboardSidebar() {
             {userEmail && (
               <span className="text-slate-400 dark:text-slate-500 text-[9px] mt-1 truncate max-w-[140px]" title={userEmail}>
                 {userEmail}
+              </span>
+            )}
+            {userRole && (
+              <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-0.5 w-fit ${ROLE_BADGE[userRole] ?? ROLE_BADGE.VIEWER}`}>
+                {userRole}
               </span>
             )}
           </div>

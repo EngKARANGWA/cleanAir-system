@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import MetricCard from "./components/MetricCard";
 import COChart from "./components/COChart";
 import AlertsList from "./components/AlertsList";
@@ -6,15 +9,48 @@ import DarkModeToggle from "../components/DarkModeToggle";
 import DeviceCard from "./devices/components/DeviceCard";
 import { devices } from "./devices/data";
 
+const ROLE_STYLE: Record<string, string> = {
+  ADMIN:    "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  OPERATOR: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  VIEWER:   "bg-slate-500/10 text-slate-500 border-slate-500/20",
+};
+
+const ROLE_DESC: Record<string, string> = {
+  ADMIN:    "Full access · All devices · User management",
+  OPERATOR: "All devices · Alerts · History",
+  VIEWER:   "Read-only · Assigned devices only",
+};
+
 export default function DashboardPage() {
+  const [user, setUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const role = (user?.role ?? "VIEWER").toUpperCase();
+  const displayName = user?.name ?? user?.email ?? "User";
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Overview</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time CO monitoring · Last updated just now
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Welcome, {displayName}
+            </h1>
+            <span className={`text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border ${ROLE_STYLE[role] ?? ROLE_STYLE.VIEWER}`}>
+              {role}
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {ROLE_DESC[role] ?? ROLE_DESC.VIEWER} · Last updated just now
           </p>
         </div>
         <div className="flex items-center gap-3">
