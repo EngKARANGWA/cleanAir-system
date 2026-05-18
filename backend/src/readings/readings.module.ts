@@ -1,0 +1,11 @@
+import { Module } from '@nestjs/common';
+import { ReadingsController } from './readings.controller';
+import { ReadingsService } from './readings.service';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [ReadingsController],
+  providers: [ReadingsService],
+})
+export class ReadingsModule {}
