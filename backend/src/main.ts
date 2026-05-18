@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
     .setTitle('Clean Air System API')
@@ -16,6 +15,9 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
+
+  // Set global prefix AFTER swagger setup so /docs is not affected
+  app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3001);
 }
