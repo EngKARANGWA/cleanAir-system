@@ -25,7 +25,7 @@ export default function AddUserPage() {
 
     try {
       await api.users.create({ name: form.name, email: form.email, role: form.role });
-      setSuccess("User created successfully! Welcome email sent.");
+      setSuccess("User created successfully! email sent to the user.");
       setForm({ name: "", email: "", role: "VIEWER", status: "ACTIVE" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create user");

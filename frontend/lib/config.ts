@@ -1,9 +1,4 @@
-// Local development
-// const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-
-// Production — Render backend
-// const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://clean-air-system-api.onrender.com";
-const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "https://cleanair-system.vercel.app").replace(/\/$/, "");
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "https://backend-cleanair.onrender.com").replace(/\/$/, "");
 
 export const API_BASE = BASE;
 

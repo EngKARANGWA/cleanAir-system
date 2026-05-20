@@ -32,14 +32,26 @@ export interface UpdateProfilePayload {
 
 // ─── Core fetch wrapper ────────────────────────────────────────────────────────
 
-async function http<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init.headers },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error((data as { message?: string }).message ?? "Request failed");
-  return data as T;
+async function http<T>(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json", ...init.headers },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { message?: string }).message ?? "Request failed");
+    return data as T;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Request timed out — the server may be starting up. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ─── API surface ──────────────────────────────────────────────────────────────
