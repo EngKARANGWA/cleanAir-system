@@ -1,21 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { devices } from "./data";
 import DeviceCard from "./components/DeviceCard";
 import DarkModeToggle from "../../components/DarkModeToggle";
 import NotificationBell from "../components/NotificationBell";
-
-const summary = {
-  total:   devices.length,
-  online:  devices.filter((d) => d.status === "online").length,
-  offline: devices.filter((d) => d.status === "offline").length,
-  warning: devices.filter((d) => d.status === "warning").length,
-};
+import { api } from "../../../lib/api";
+import { mapApiDevice, type Device } from "./data";
 
 export default function DevicesPage() {
+  const [devices, setDevices]   = useState<Device[]>([]);
+  const [loading, setLoading]   = useState(true);
+
   const [role] = useState<string>(() => {
     if (typeof window === "undefined") return "VIEWER";
     try {
@@ -26,6 +23,21 @@ export default function DevicesPage() {
     }
   });
 
+  useEffect(() => {
+    api.devices
+      .list()
+      .then((data) => setDevices(data.map(mapApiDevice)))
+      .catch(() => setDevices([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const summary = {
+    total:   devices.length,
+    online:  devices.filter((d) => d.status === "online").length,
+    offline: devices.filter((d) => d.status === "offline").length,
+    warning: devices.filter((d) => d.status === "warning").length,
+  };
+
   const isViewer = role === "VIEWER";
 
   return (
@@ -35,7 +47,9 @@ export default function DevicesPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Devices</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {summary.total} registered · {summary.online} online · {summary.warning} warning · {summary.offline} offline
+            {loading
+              ? "Loading…"
+              : `${summary.total} registered · ${summary.online} online · ${summary.warning} warning · ${summary.offline} offline`}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -63,18 +77,24 @@ export default function DevicesPage() {
           { label: "Offline",       value: summary.offline, color: "text-slate-400" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm text-center">
-            <p className={`text-3xl font-extrabold ${color}`}>{value}</p>
+            <p className={`text-3xl font-extrabold ${color}`}>{loading ? "—" : value}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Device grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
-        {devices.map((device) => (
-          <DeviceCard key={device.id} device={device} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-12 text-slate-400">Loading devices…</div>
+      ) : devices.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">No devices registered yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
+          {devices.map((device) => (
+            <DeviceCard key={device.id} device={device} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

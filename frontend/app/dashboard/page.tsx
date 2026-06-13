@@ -9,7 +9,8 @@ import DarkModeToggle from "../components/DarkModeToggle";
 import DeviceCard from "./devices/components/DeviceCard";
 import OperatorPanel from "./components/OperatorPanel";
 import NotificationBell from "./components/NotificationBell";
-import { devices } from "./devices/data";
+import { api } from "../../lib/api";
+import { mapApiDevice, type Device } from "./devices/data";
 
 const ROLE_STYLE: Record<string, string> = {
   ADMIN:    "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -24,21 +25,40 @@ const ROLE_DESC: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
+  const [user, setUser]       = useState<{ name?: string; email?: string; role?: string } | null>(null);
+  const [devices, setDevices] = useState<Device[]>([]);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem("user");
       if (stored) setUser(JSON.parse(stored));
-    } catch {
-      // ignore
-    }
+    } catch {}
+
+    api.devices
+      .list()
+      .then((data) => setDevices(data.map(mapApiDevice)))
+      .catch(() => {});
   }, []);
 
-  const role = (user?.role ?? "VIEWER").toUpperCase();
+  const role        = (user?.role ?? "VIEWER").toUpperCase();
   const displayName = user?.name ?? user?.email ?? "User";
 
-  // Operator gets a dedicated operational dashboard
+  const activeDevices = devices.filter((d) => d.status !== "offline");
+  const onlineCount   = devices.filter((d) => d.status === "online").length;
+
+  const avgInput = activeDevices.length
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length)
+    : 0;
+  const avgOutput = activeDevices.length
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length)
+    : 0;
+  const avgReduction = activeDevices.length
+    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(1)
+    : "0.0";
+  const uptimePct = devices.length
+    ? Math.round((onlineCount / devices.length) * 100)
+    : 0;
+
   if (role === "OPERATOR") {
     return (
       <div className="space-y-8">
@@ -49,15 +69,14 @@ export default function DashboardPage() {
             <DarkModeToggle />
           </div>
         </div>
-        <OperatorPanel operatorName={displayName} />
-        {/* Sensor metrics below the operator panel */}
+        <OperatorPanel operatorName={displayName} devices={devices} />
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Live Sensor Readings</h2>
           <div className="grid grid-cols-4 gap-4">
-            <MetricCard title="CO Input Level"     value="440"  unit="ppm" accent="red"    />
-            <MetricCard title="After Purification" value="218"  unit="ppm" accent="green"  />
-            <MetricCard title="Purification Rate"  value="50.5" unit="%"   accent="blue"   />
-            <MetricCard title="Sensor Uptime"      value="99.2" unit="%"   accent="purple" />
+            <MetricCard title="CO Input Level"     value={avgInput  > 0 ? String(avgInput)  : "—"} unit="ppm" accent="red"    />
+            <MetricCard title="After Purification" value={avgOutput > 0 ? String(avgOutput) : "—"} unit="ppm" accent="green"  />
+            <MetricCard title="Purification Rate"  value={avgReduction}                             unit="%"   accent="blue"   />
+            <MetricCard title="Devices Online"     value={String(uptimePct)}                        unit="%"   accent="purple" />
           </div>
         </div>
         <COChart />
@@ -83,9 +102,15 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 px-4 py-2 rounded-xl">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-green-600 dark:text-green-400">ESP32 Online</span>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+            onlineCount > 0
+              ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20"
+              : "bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-700"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${onlineCount > 0 ? "bg-green-500 animate-pulse" : "bg-slate-400"}`} />
+            <span className={`text-sm font-medium ${onlineCount > 0 ? "text-green-600 dark:text-green-400" : "text-slate-500"}`}>
+              {onlineCount > 0 ? `${onlineCount} Online` : "No Devices"}
+            </span>
           </div>
           <NotificationBell />
           <DarkModeToggle />
@@ -94,10 +119,10 @@ export default function DashboardPage() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <MetricCard title="CO Input Level"    value="440"  unit="ppm" accent="red"    />
-        <MetricCard title="After Purification" value="218"  unit="ppm" accent="green"  />
-        <MetricCard title="Purification Rate"  value="50.5" unit="%"   accent="blue"   />
-        <MetricCard title="Sensor Uptime"      value="99.2" unit="%"   accent="purple" />
+        <MetricCard title="CO Input Level"     value={avgInput  > 0 ? String(avgInput)  : "—"} unit="ppm" accent="red"    />
+        <MetricCard title="After Purification" value={avgOutput > 0 ? String(avgOutput) : "—"} unit="ppm" accent="green"  />
+        <MetricCard title="Purification Rate"  value={avgReduction}                             unit="%"   accent="blue"   />
+        <MetricCard title="Devices Online"     value={String(uptimePct)}                        unit="%"   accent="purple" />
       </div>
 
       {/* Chart */}
@@ -106,10 +131,10 @@ export default function DashboardPage() {
       {/* Alerts + Readings */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1">
-          <AlertsList />
+          <AlertsList devices={devices} />
         </div>
         <div className="xl:col-span-2">
-          <ReadingsTable />
+          <ReadingsTable devices={devices} />
         </div>
       </div>
 
@@ -119,11 +144,15 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Registered Devices</h2>
           <a href="/dashboard/devices" className="text-sm text-blue-500 hover:underline">View all</a>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {devices.map((device) => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
-        </div>
+        {devices.length === 0 ? (
+          <div className="text-center py-8 text-slate-400 text-sm">Loading devices…</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {devices.map((device) => (
+              <DeviceCard key={device.id} device={device} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

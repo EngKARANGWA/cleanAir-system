@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "./config";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Auth types ───────────────────────────────────────────────────────────────
 
 export interface AuthUser {
   id: string;
@@ -30,6 +30,52 @@ export interface UpdateProfilePayload {
   password?: string;
 }
 
+// ─── Device types ─────────────────────────────────────────────────────────────
+
+export interface ApiDevice {
+  id: string;
+  name: string;
+  type: string;         // "car" | "motorcycle" | "industry" (lowercase from API)
+  owner: string;
+  plateOrRef: string;
+  location: string;
+  status: string;       // "ONLINE" | "OFFLINE" | "WARNING"
+  coInput: number;      // latest CO input ppm, direct field
+  coOutput: number;     // latest CO output ppm, direct field
+  reduction: number;    // purification %, direct field
+  uptime?: string;
+  lastSeen?: string;
+  firmware?: string;
+  ip?: string;
+  mac?: string;
+  installedAt?: string;
+  safetyStatus?: string; // "NORMAL" | "WARNING" | "CRITICAL"
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateDevicePayload {
+  name: string;
+  type: string;
+  owner: string;
+  plateOrRef: string;
+  location: string;
+  ip?: string;
+  mac?: string;
+  firmware?: string;
+  safetyStatus?: string;
+}
+
+export interface PostReadingPayload {
+  inputPpm: number;
+  outputPpm: number;
+  status?: string;
+  uptime?: string;
+  firmware?: string;
+  ip?: string;
+  mac?: string;
+}
+
 // ─── Core fetch wrapper ────────────────────────────────────────────────────────
 
 async function http<T>(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<T> {
@@ -39,7 +85,12 @@ async function http<T>(url: string, init: RequestInit = {}, timeoutMs = 30_000):
     const res = await fetch(url, {
       ...init,
       signal: controller.signal,
-      headers: { "Content-Type": "application/json", ...init.headers },
+      headers: {
+        // Only set Content-Type for requests with a body — adding it to GET
+        // requests triggers a CORS preflight that the backend may not handle.
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...init.headers,
+      },
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { message?: string }).message ?? "Request failed");
@@ -102,18 +153,33 @@ export const api = {
 
   devices: {
     list: () =>
-      http<unknown[]>(ENDPOINTS.devices.list, { cache: "no-store" }),
+      http<ApiDevice[]>(ENDPOINTS.devices.list, { cache: "no-store" }),
 
     get: (id: string) =>
-      http<unknown>(ENDPOINTS.devices.one(id)),
-  },
+      http<ApiDevice>(ENDPOINTS.devices.one(id)),
 
-  readings: {
-    latest: () => http<unknown>(ENDPOINTS.readings.latest),
-    history: () => http<unknown[]>(ENDPOINTS.readings.history),
-  },
+    create: (payload: CreateDevicePayload) =>
+      http<ApiDevice>(ENDPOINTS.devices.create, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
 
-  alerts: {
-    list: () => http<unknown[]>(ENDPOINTS.alerts.list),
+    update: (id: string, payload: Partial<CreateDevicePayload>) =>
+      http<ApiDevice>(ENDPOINTS.devices.update(id), {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+
+    remove: (id: string) =>
+      http(ENDPOINTS.devices.remove(id), { method: "DELETE" }),
+
+    reboot: (id: string) =>
+      http(ENDPOINTS.devices.reboot(id), { method: "POST" }),
+
+    postReading: (id: string, payload: PostReadingPayload) =>
+      http(ENDPOINTS.devices.readings(id), {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
   },
 };
