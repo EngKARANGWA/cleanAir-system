@@ -40,11 +40,12 @@ const STATUS_MAP: Record<string, DeviceStatus> = {
 
 export function mapApiDevice(d: ApiDevice): Device {
   // API returns coInput/coOutput/reduction directly on the device object
-  const input     = d.coInput  ?? 0;
-  const output    = d.coOutput ?? 0;
-  const reduction = d.reduction ?? (
-    input > 0 ? Math.round(((input - output) / input) * 1000) / 10 : 0
-  );
+  const input  = Math.round((d.coInput  ?? 0) * 100) / 100;
+  const output = Math.round((d.coOutput ?? 0) * 100) / 100;
+  // Always round to 2 dp — backend may return a raw float like 64.1379...
+  const reduction = d.reduction != null
+    ? Math.round(d.reduction * 100) / 100
+    : (input > 0 ? Math.round(((input - output) / input) * 10000) / 100 : 0);
 
   const status: DeviceStatus =
     STATUS_MAP[d.status] ??

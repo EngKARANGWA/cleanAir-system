@@ -4,9 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Lock } from "lucide-react";
 import DarkModeToggle from "../../../components/DarkModeToggle";
-import { devices } from "../data";
-
-const nextId = `ESP32-${String(devices.length + 1).padStart(3, "0")}`;
+// Device ID is assigned by the backend on creation
+const nextId = "Auto-assigned";
 
 export default function AddDevicePage() {
   const [form, setForm] = useState({

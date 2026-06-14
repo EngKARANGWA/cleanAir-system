@@ -70,7 +70,7 @@ export default function OperatorPanel({
         </div>
 
         {/* Quick stats */}
-        <div className="grid grid-cols-4 gap-3 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
           {[
             { label: "Online",         value: online,   icon: <CheckCircle className="w-4 h-4" />,   color: "bg-green-400/20 text-green-100"  },
             { label: "Warning",        value: warning,  icon: <AlertTriangle className="w-4 h-4" />, color: "bg-yellow-400/20 text-yellow-100" },

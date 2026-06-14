@@ -13,6 +13,8 @@ import {
   Users,
   ArrowLeft,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 
 const ALL_NAV = [
@@ -35,6 +37,9 @@ export default function DashboardSidebar() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("VIEWER");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { setOpen(false); }, [pathname]);
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -52,80 +57,107 @@ export default function DashboardSidebar() {
   const navItems = ALL_NAV.filter((item) => item.roles.includes(userRole));
 
   const handleLogout = () => {
-    // Clear local/session storage auth tokens
     localStorage.clear();
     sessionStorage.clear();
-    // Redirect to welcome page
     router.push("/");
   };
 
   return (
-    <aside className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-40">
-      {/* Logo */}
-      <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
-            <Wind className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-sm text-slate-900 dark:text-white">CleanAir</span>
-            <span className="text-green-500 text-[10px] font-semibold uppercase tracking-widest">Dashboard</span>
-            {userEmail && (
-              <span className="text-slate-400 dark:text-slate-500 text-[9px] mt-1 truncate max-w-[140px]" title={userEmail}>
-                {userEmail}
-              </span>
-            )}
-            {userRole && (
-              <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-0.5 w-fit ${ROLE_BADGE[userRole] ?? ROLE_BADGE.VIEWER}`}>
-                {userRole}
-              </span>
-            )}
-          </div>
-        </Link>
-      </div>
+    <>
+      {/* Hamburger button — mobile only */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+      </button>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        <div className="space-y-1">
-          {navItems.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+      {/* Backdrop — mobile only */}
+      {open && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
-      </nav>
-
-      {/* Footer Actions */}
-      <div className="px-3 py-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
-        <Link
-          href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to site
-        </Link>
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col z-50 transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+        {/* Close button — mobile only */}
         <button
           type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+          onClick={() => setOpen(false)}
+          className="md:hidden absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+          aria-label="Close menu"
         >
-          <LogOut className="w-4 h-4" />
-          Logout
+          <X className="w-4 h-4" />
         </button>
-      </div>
-    </aside>
+
+        {/* Logo */}
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-500 to-green-500 p-2 rounded-xl">
+              <Wind className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">CleanAir</span>
+              <span className="text-green-500 text-[10px] font-semibold uppercase tracking-widest">Dashboard</span>
+              {userEmail && (
+                <span className="text-slate-400 dark:text-slate-500 text-[9px] mt-1 truncate max-w-[140px]" title={userEmail}>
+                  {userEmail}
+                </span>
+              )}
+              {userRole && (
+                <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-0.5 w-fit ${ROLE_BADGE[userRole] ?? ROLE_BADGE.VIEWER}`}>
+                  {userRole}
+                </span>
+              )}
+            </div>
+          </Link>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <div className="space-y-1">
+            {navItems.map(({ label, href, icon: Icon }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    active
+                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Footer Actions */}
+        <div className="px-3 py-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to site
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

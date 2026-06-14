@@ -19,7 +19,7 @@ export default function HeroSection() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Link
-          href="/dashboard"
+          href="/login"
           className="bg-blue-500 hover:bg-blue-400 text-white px-8 py-3 rounded-xl font-semibold text-lg transition-colors shadow-lg shadow-blue-500/20"
         >
           View Live Dashboard

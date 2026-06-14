@@ -26,7 +26,7 @@ function buildSnapshot(devices: ApiDevice[]): DataPoint | null {
   const avg = (vals: number[]) =>
     Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
   return {
-    time:   new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    time:   new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
     input:  avg(active.map((d) => d.coInput  ?? 0)),
     output: avg(active.map((d) => d.coOutput ?? 0)),
   };
@@ -49,7 +49,7 @@ export default function COChart() {
     }
 
     poll();
-    const id = setInterval(poll, 30_000);
+    const id = setInterval(poll, 10_000);
     return () => clearInterval(id);
   }, []);
 
@@ -59,7 +59,7 @@ export default function COChart() {
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-white">CO Levels Over Time</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Session history · avg across active devices · ppm
+            Live · refreshes every 10 s · avg ppm across active devices
           </p>
         </div>
         <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-3 py-1 rounded-full font-medium">

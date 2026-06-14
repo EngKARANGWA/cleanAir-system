@@ -59,9 +59,9 @@ export default function DeviceCard({ device }: { device: Device }) {
             <p className="text-xs text-slate-400 mb-1">CO Out</p>
             <p className="font-bold text-green-500 text-sm">{device.coOutput} <span className="text-[10px] font-normal text-slate-400">ppm</span></p>
           </div>
-          <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3 text-center">
+          <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3 text-center min-w-0">
             <p className="text-xs text-slate-400 mb-1">Reduction</p>
-            <p className="font-bold text-blue-500 text-sm">{device.reduction}%</p>
+            <p className="font-bold text-blue-500 text-sm truncate">{device.reduction}%</p>
           </div>
         </div>
       ) : (

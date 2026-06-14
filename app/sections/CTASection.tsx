@@ -10,7 +10,7 @@ export default function CTASection() {
           status, and historical data.
         </p>
         <Link
-          href="/dashboard"
+          href="/login"
           className="bg-blue-500 hover:bg-blue-400 text-white px-10 py-3 rounded-xl font-semibold text-lg transition-colors"
         >
           Open Dashboard

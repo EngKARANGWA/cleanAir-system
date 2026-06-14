@@ -53,14 +53,14 @@ export default function ViewDashboardPage() {
   const offlineDevices = devices.filter((d) => d.status === "offline");
 
   const avgInput = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length)
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length * 100) / 100
     : 0;
   const avgOutput = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length)
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length * 100) / 100
     : 0;
   const avgReduction = activeDevices.length
-    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(1)
-    : "0.0";
+    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(2)
+    : "0.00";
 
   const aq = airQualityLabel(avgInput);
 
@@ -68,7 +68,7 @@ export default function ViewDashboardPage() {
     <div className="space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 pt-10 md:pt-0">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="p-1.5 bg-emerald-600 rounded-lg">
@@ -100,7 +100,7 @@ export default function ViewDashboardPage() {
               Based on {activeDevices.length} active device{activeDevices.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center min-w-0">
             {[
               { label: "Avg CO Input",  value: avgInput  > 0 ? `${avgInput} ppm`  : "—", color: "text-red-500"   },
               { label: "Avg CO Output", value: avgOutput > 0 ? `${avgOutput} ppm` : "—", color: "text-green-500" },

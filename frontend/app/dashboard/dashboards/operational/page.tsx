@@ -86,12 +86,12 @@ export default function OperationalDashboardPage() {
 
   const activeDevices = devices.filter((d) => d.coInput > 0);
   const avgInput      = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length) : 0;
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length * 100) / 100 : 0;
   const avgOutput     = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length) : 0;
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length * 100) / 100 : 0;
   const avgReduction  = activeDevices.length
-    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(1)
-    : "0.0";
+    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(2)
+    : "0.00";
 
   const allAlerts    = deriveActiveAlerts(devices);
   const activeAlerts = allAlerts.filter((a) => !acknowledgedIds.has(a.id));
@@ -106,7 +106,7 @@ export default function OperationalDashboardPage() {
     <div className="space-y-8">
 
       {/* ── Top bar ── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 pt-10 md:pt-0">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="p-1.5 bg-blue-600 rounded-lg">

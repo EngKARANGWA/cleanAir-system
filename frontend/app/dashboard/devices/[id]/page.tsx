@@ -5,8 +5,11 @@ import {
   AlertTriangle, Pencil, Trash2, RefreshCw, User,
   Thermometer, Activity, Shield, Calendar,
 } from "lucide-react";
-import { devices, DeviceStatus, VehicleType } from "../data";
 import DarkModeToggle from "../../../components/DarkModeToggle";
+import { mapApiDevice, type DeviceStatus, type VehicleType } from "../data";
+import type { ApiDevice } from "../../../../lib/api";
+
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "https://backend-cleanair.onrender.com").replace(/\/$/, "");
 
 const statusConfig: Record<DeviceStatus, { label: string; icon: typeof Wifi; color: string; bg: string; dot: string }> = {
   online:  { label: "Online",  icon: Wifi,         color: "text-green-600 dark:text-green-400",   bg: "bg-green-50 dark:bg-green-500/10",   dot: "bg-green-500" },
@@ -15,16 +18,25 @@ const statusConfig: Record<DeviceStatus, { label: string; icon: typeof Wifi; col
 };
 
 const typeConfig: Record<VehicleType, { label: string; icon: typeof Car; color: string; bg: string }> = {
-  car:        { label: "Car",        icon: Car,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-500/10"    },
+  car:        { label: "Car",        icon: Car,     color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-500/10"     },
   motorcycle: { label: "Motorcycle", icon: Bike,    color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
   industry:   { label: "Industry",   icon: Factory, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
 };
 
 export default async function DeviceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const device = devices.find((d) => d.id === id);
-  if (!device) notFound();
 
+  let apiDevice: ApiDevice | null = null;
+  try {
+    const res = await fetch(`${BASE}/api/devices/${id}`, { cache: "no-store" });
+    if (res.ok) apiDevice = await res.json() as ApiDevice;
+  } catch {
+    // fall through to notFound
+  }
+
+  if (!apiDevice) notFound();
+
+  const device = mapApiDevice(apiDevice);
   const { label, icon: StatusIcon, color, bg, dot } = statusConfig[device.status];
   const { label: typeLabel, icon: TypeIcon, color: typeColor, bg: typeBg } = typeConfig[device.type];
 
@@ -99,18 +111,18 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-blue-500" /> Device & Vehicle Info
+            <Cpu className="w-4 h-4 text-blue-500" /> Device &amp; Vehicle Info
           </h3>
           <div className="space-y-0">
             {[
-              { label: "Device ID",       value: device.id },
-              { label: "Plate / Ref",     value: device.plateOrRef },
-              { label: "Owner",           value: device.owner },
-              { label: "Location",        value: device.location },
-              { label: "IP Address",      value: device.ip },
-              { label: "MAC Address",     value: device.mac },
-              { label: "Firmware",        value: device.firmware },
-              { label: "Installed",       value: device.installedAt },
+              { label: "Device ID",   value: device.id },
+              { label: "Plate / Ref", value: device.plateOrRef },
+              { label: "Owner",       value: device.owner },
+              { label: "Location",    value: device.location },
+              { label: "IP Address",  value: device.ip },
+              { label: "MAC Address", value: device.mac },
+              { label: "Firmware",    value: device.firmware },
+              { label: "Installed",   value: device.installedAt },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
                 <span className="text-sm text-slate-500 dark:text-slate-400">{label}</span>
@@ -126,10 +138,10 @@ export default async function DeviceDetailPage({ params }: { params: Promise<{ i
           </h3>
           <div className="space-y-0">
             {[
-              { label: "Uptime",             value: device.uptime,          icon: Clock,       color: "text-blue-500"   },
-              { label: "Purification Rate",  value: `${device.reduction}%`, icon: Shield,      color: "text-green-500"  },
-              { label: "Sensor Range",       value: "0 – 1000 ppm",         icon: Thermometer, color: "text-purple-500" },
-              { label: "Installed Date",     value: device.installedAt,     icon: Calendar,    color: "text-slate-400"  },
+              { label: "Uptime",            value: device.uptime,          icon: Clock,       color: "text-blue-500"   },
+              { label: "Purification Rate", value: `${device.reduction}%`, icon: Shield,      color: "text-green-500"  },
+              { label: "Sensor Range",      value: "0 – 1000 ppm",         icon: Thermometer, color: "text-purple-500" },
+              { label: "Installed Date",    value: device.installedAt,     icon: Calendar,    color: "text-slate-400"  },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="flex items-center gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-0">
                 <div className="bg-slate-50 dark:bg-slate-700/40 p-2 rounded-lg">

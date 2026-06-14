@@ -34,10 +34,17 @@ export default function DashboardPage() {
       if (stored) setUser(JSON.parse(stored));
     } catch {}
 
-    api.devices
-      .list()
-      .then((data) => setDevices(data.map(mapApiDevice)))
-      .catch(() => {});
+    function fetchDevices() {
+      api.devices
+        .list()
+        .then((data) => setDevices(data.map(mapApiDevice)))
+        .catch(() => {});
+    }
+
+    fetchDevices();
+    // Re-poll every 10 s — ESP32 posts new readings every few seconds
+    const id = setInterval(fetchDevices, 10_000);
+    return () => clearInterval(id);
   }, []);
 
   const role        = (user?.role ?? "VIEWER").toUpperCase();
@@ -47,14 +54,14 @@ export default function DashboardPage() {
   const onlineCount   = devices.filter((d) => d.status === "online").length;
 
   const avgInput = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length)
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length * 100) / 100
     : 0;
   const avgOutput = activeDevices.length
-    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length)
+    ? Math.round(activeDevices.reduce((s, d) => s + d.coOutput, 0) / activeDevices.length * 100) / 100
     : 0;
   const avgReduction = activeDevices.length
-    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(1)
-    : "0.0";
+    ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(2)
+    : "0.00";
   const uptimePct = devices.length
     ? Math.round((onlineCount / devices.length) * 100)
     : 0;
@@ -62,17 +69,14 @@ export default function DashboardPage() {
   if (role === "OPERATOR") {
     return (
       <div className="space-y-8">
-        <div className="flex items-end justify-between">
-          <div />
-          <div className="flex items-center gap-3">
-            <NotificationBell />
-            <DarkModeToggle />
-          </div>
+        <div className="flex items-end justify-end gap-3 pt-10 md:pt-0">
+          <NotificationBell />
+          <DarkModeToggle />
         </div>
         <OperatorPanel operatorName={displayName} devices={devices} />
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Live Sensor Readings</h2>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <MetricCard title="CO Input Level"     value={avgInput  > 0 ? String(avgInput)  : "—"} unit="ppm" accent="red"    />
             <MetricCard title="After Purification" value={avgOutput > 0 ? String(avgOutput) : "—"} unit="ppm" accent="green"  />
             <MetricCard title="Purification Rate"  value={avgReduction}                             unit="%"   accent="blue"   />
@@ -87,9 +91,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4 pt-10 md:pt-0">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Welcome, {displayName}
             </h1>
@@ -118,7 +122,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard title="CO Input Level"     value={avgInput  > 0 ? String(avgInput)  : "—"} unit="ppm" accent="red"    />
         <MetricCard title="After Purification" value={avgOutput > 0 ? String(avgOutput) : "—"} unit="ppm" accent="green"  />
         <MetricCard title="Purification Rate"  value={avgReduction}                             unit="%"   accent="blue"   />

@@ -12,6 +12,7 @@ import { mapApiDevice, type Device } from "./data";
 export default function DevicesPage() {
   const [devices, setDevices]   = useState<Device[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [error,   setError]     = useState<string | null>(null);
 
   const [role] = useState<string>(() => {
     if (typeof window === "undefined") return "VIEWER";
@@ -26,8 +27,16 @@ export default function DevicesPage() {
   useEffect(() => {
     api.devices
       .list()
-      .then((data) => setDevices(data.map(mapApiDevice)))
-      .catch(() => setDevices([]))
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          setError(`Unexpected response: ${JSON.stringify(data).slice(0, 120)}`);
+          return;
+        }
+        setDevices(data.map(mapApiDevice));
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -43,7 +52,7 @@ export default function DevicesPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-10 md:pt-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Devices</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -69,7 +78,7 @@ export default function DevicesPage() {
       </div>
 
       {/* Summary strips */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Devices", value: summary.total,   color: "text-slate-900 dark:text-white" },
           { label: "Online",        value: summary.online,  color: "text-green-500" },
@@ -86,6 +95,8 @@ export default function DevicesPage() {
       {/* Device grid */}
       {loading ? (
         <div className="text-center py-12 text-slate-400">Loading devices…</div>
+      ) : error ? (
+        <div className="text-center py-12 text-red-500 text-sm whitespace-pre-wrap break-all">{error}</div>
       ) : devices.length === 0 ? (
         <div className="text-center py-12 text-slate-400">No devices registered yet.</div>
       ) : (

@@ -136,7 +136,7 @@ export default function AlertsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-10 md:pt-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Alerts</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -147,7 +147,7 @@ export default function AlertsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Critical",     value: summary.critical,     color: "text-red-500"    },
           { label: "Warnings",     value: summary.warning,      color: "text-yellow-500" },
@@ -167,7 +167,7 @@ export default function AlertsPage() {
       {/* Alert list */}
       <div className="space-y-4">
         {/* Filter tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={tabClass("all")}          onClick={() => setFilter("all")}>
             All ({alerts.length})
           </button>
