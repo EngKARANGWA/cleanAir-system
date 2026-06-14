@@ -1,88 +1,60 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, Info, AlertTriangle, XCircle } from "lucide-react";
-
-export interface Notification {
-  id: string;
-  type: "info" | "warning" | "error";
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-}
-
-const DEFAULT_NOTIFICATIONS: Notification[] = [
-  {
-    id: "n1",
-    type: "info",
-    title: "Read-only Access",
-    message: "You have view-only permissions. Contact an admin to add or modify devices.",
-    time: "Just now",
-    read: false,
-  },
-  {
-    id: "n2",
-    type: "warning",
-    title: "Device Warning",
-    message: "ESP32-002 purification rate dropped below 50% threshold.",
-    time: "5 min ago",
-    read: false,
-  },
-  {
-    id: "n3",
-    type: "error",
-    title: "Device Offline",
-    message: "ESP32-003 has been offline for over 2 hours.",
-    time: "2 hr ago",
-    read: true,
-  },
-  {
-    id: "n4",
-    type: "info",
-    title: "System Update",
-    message: "CleanAir monitoring system updated to v2.1.3.",
-    time: "Yesterday",
-    read: true,
-  },
-];
+import {
+  Bell, BellOff, BellRing, CheckCheck,
+  Info, AlertTriangle, XCircle,
+} from "lucide-react";
+import { initFCM, requestPermission, getPermission } from "../../../lib/fcm";
+import type { AppNotification } from "../../../lib/useAlertNotifications";
 
 const TYPE_STYLES = {
-  info:    { icon: <Info className="w-4 h-4 text-blue-500" />,          dot: "bg-blue-500",    bg: "bg-blue-50 dark:bg-blue-500/10"    },
-  warning: { icon: <AlertTriangle className="w-4 h-4 text-yellow-500" />, dot: "bg-yellow-500",  bg: "bg-yellow-50 dark:bg-yellow-500/10" },
-  error:   { icon: <XCircle className="w-4 h-4 text-red-500" />,         dot: "bg-red-500",     bg: "bg-red-50 dark:bg-red-500/10"       },
+  info:    { icon: <Info    className="w-4 h-4 text-blue-500"   />, dot: "bg-blue-500",   bg: "bg-blue-50 dark:bg-blue-500/10"    },
+  warning: { icon: <AlertTriangle className="w-4 h-4 text-yellow-500" />, dot: "bg-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-500/10" },
+  error:   { icon: <XCircle className="w-4 h-4 text-red-500"   />, dot: "bg-red-500",    bg: "bg-red-50 dark:bg-red-500/10"      },
 };
 
 export default function NotificationBell({
-  notifications: initial = DEFAULT_NOTIFICATIONS,
+  notifications = [],
+  onMarkRead    = () => {},
+  onMarkAllRead = () => {},
 }: {
-  notifications?: Notification[];
+  notifications?: AppNotification[];
+  onMarkRead?:    (id: string) => void;
+  onMarkAllRead?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Notification[]>(initial);
+  const [open, setOpen]           = useState(false);
+  const [permission, setPermission] = useState<string>("default");
   const ref = useRef<HTMLDivElement>(null);
 
-  const unread = items.filter((n) => !n.read).length;
+  const unread = notifications.filter((n) => !n.read).length;
 
-  const markAllRead = () =>
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-
-  const markRead = (id: string) =>
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-
-  // Close on outside click
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    setPermission(getPermission());
+    // Register service worker + get FCM token (silently, no prompt yet)
+    initFCM().catch(() => {});
+  }, []);
+
+  async function handleEnable() {
+    const perm = await requestPermission();
+    setPermission(perm);
+    if (perm === "granted") {
+      await initFCM();
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+  }
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
   return (
     <div ref={ref} className="relative">
+
       {/* Bell button */}
       <button
         type="button"
@@ -100,7 +72,34 @@ export default function NotificationBell({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl shadow-slate-200/60 dark:shadow-black/40 z-50 overflow-hidden">
+        <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden">
+
+          {/* Permission banner */}
+          {permission !== "granted" && (
+            <div className="px-4 py-3 bg-blue-50 dark:bg-blue-500/10 border-b border-blue-100 dark:border-blue-500/20 flex items-center gap-3">
+              <BellOff className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                  {permission === "denied" ? "Notifications blocked" : "Enable push notifications"}
+                </p>
+                <p className="text-[11px] text-blue-500 mt-0.5">
+                  {permission === "denied"
+                    ? "Allow in browser settings to receive CO alerts"
+                    : "Get alerted when CO levels are dangerous"}
+                </p>
+              </div>
+              {permission !== "denied" && (
+                <button
+                  type="button"
+                  onClick={handleEnable}
+                  className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg font-medium hover:bg-blue-500 transition-colors shrink-0"
+                >
+                  Enable
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-2">
@@ -115,7 +114,7 @@ export default function NotificationBell({
             {unread > 0 && (
               <button
                 type="button"
-                onClick={markAllRead}
+                onClick={onMarkAllRead}
                 className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 font-medium transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -126,36 +125,28 @@ export default function NotificationBell({
 
           {/* List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-            {items.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                <Bell className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-sm">No notifications</p>
+                <BellRing className="w-8 h-8 mb-2 opacity-30" />
+                <p className="text-sm">No alerts — all systems normal</p>
               </div>
             ) : (
-              items.map((n) => {
+              notifications.map((n) => {
                 const style = TYPE_STYLES[n.type];
                 return (
                   <button
                     key={n.id}
                     type="button"
-                    onClick={() => markRead(n.id)}
-                    className={`w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
-                      !n.read ? style.bg : ""
-                    }`}
+                    onClick={() => onMarkRead(n.id)}
+                    className={`w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 ${!n.read ? style.bg : ""}`}
                   >
                     <div className="mt-0.5 shrink-0">{style.icon}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          {n.title}
-                        </p>
-                        {!n.read && (
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
-                        )}
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{n.title}</p>
+                        {!n.read && <span className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                        {n.message}
-                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{n.message}</p>
                       <p className="text-[11px] text-slate-400 mt-1">{n.time}</p>
                     </div>
                   </button>
@@ -167,7 +158,7 @@ export default function NotificationBell({
           {/* Footer */}
           <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-700 text-center">
             <p className="text-xs text-slate-400">
-              {items.filter((n) => n.read).length} of {items.length} read
+              {notifications.filter((n) => n.read).length} of {notifications.length} read
             </p>
           </div>
         </div>

@@ -11,6 +11,7 @@ import OperatorPanel from "./components/OperatorPanel";
 import NotificationBell from "./components/NotificationBell";
 import { api } from "../../lib/api";
 import { mapApiDevice, type Device } from "./devices/data";
+import { useAlertNotifications } from "../../lib/useAlertNotifications";
 
 const ROLE_STYLE: Record<string, string> = {
   ADMIN:    "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -27,6 +28,7 @@ const ROLE_DESC: Record<string, string> = {
 export default function DashboardPage() {
   const [user, setUser]       = useState<{ name?: string; email?: string; role?: string } | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const { notifications, markRead, markAllRead } = useAlertNotifications(devices);
 
   useEffect(() => {
     try {
@@ -70,7 +72,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-8">
         <div className="flex items-end justify-end gap-3 pt-10 md:pt-0">
-          <NotificationBell />
+          <NotificationBell notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} />
           <DarkModeToggle />
         </div>
         <OperatorPanel operatorName={displayName} devices={devices} />
@@ -116,7 +118,7 @@ export default function DashboardPage() {
               {onlineCount > 0 ? `${onlineCount} Online` : "No Devices"}
             </span>
           </div>
-          <NotificationBell />
+          <NotificationBell notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} />
           <DarkModeToggle />
         </div>
       </div>

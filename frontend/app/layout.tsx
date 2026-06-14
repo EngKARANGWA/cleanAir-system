@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -11,7 +11,21 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "CleanAir System",
-  description: "IoT-Based Exhaust Air Purification and Monitoring System",
+  description: "IoT-Based Exhaust Air Purification and CO Monitoring System",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CleanAir",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({

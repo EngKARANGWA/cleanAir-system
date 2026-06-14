@@ -8,11 +8,13 @@ import DarkModeToggle from "../../components/DarkModeToggle";
 import NotificationBell from "../components/NotificationBell";
 import { api } from "../../../lib/api";
 import { mapApiDevice, type Device } from "./data";
+import { useAlertNotifications } from "../../../lib/useAlertNotifications";
 
 export default function DevicesPage() {
   const [devices, setDevices]   = useState<Device[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error,   setError]     = useState<string | null>(null);
+  const { notifications, markRead, markAllRead } = useAlertNotifications(devices);
 
   const [role] = useState<string>(() => {
     if (typeof window === "undefined") return "VIEWER";
@@ -71,7 +73,7 @@ export default function DevicesPage() {
         <div className="flex items-center gap-3">
           <DarkModeToggle />
           {isViewer ? (
-            <NotificationBell />
+            <NotificationBell notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} />
           ) : (
             <Link
               href="/dashboard/devices/add"
