@@ -69,16 +69,21 @@ export default function OperationalDashboardPage() {
   const [loading, setLoading]           = useState(true);
   const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
 
-  function load() {
-    setLoading(true);
+  function load(showSpinner = false) {
+    if (showSpinner) setLoading(true);
     api.devices
       .list()
       .then((data) => setDevices(data.map(mapApiDevice)))
-      .catch(() => setDevices([]))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load(true);
+    const id = setInterval(() => load(false), 10_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const online  = devices.filter((d) => d.status === "online").length;
   const warning = devices.filter((d) => d.status === "warning").length;

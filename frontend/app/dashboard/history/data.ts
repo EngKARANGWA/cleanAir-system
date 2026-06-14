@@ -1,3 +1,7 @@
+import type { ApiDevice } from "../../../lib/api";
+
+export type ReadingStatus = "normal" | "warning" | "critical";
+
 export interface Reading {
   id: string;
   timestamp: string;
@@ -10,38 +14,69 @@ export interface Reading {
   coInput: number;
   coOutput: number;
   reduction: number;
-  status: "normal" | "warning" | "critical";
+  status: ReadingStatus;
 }
 
-export const readings: Reading[] = [
-  { id: "R001", timestamp: "2026-04-21 06:00:12", date: "2026-04-21", time: "06:00:12", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 440, coOutput: 218, reduction: 50.5, status: "normal"   },
-  { id: "R002", timestamp: "2026-04-21 05:57:08", date: "2026-04-21", time: "05:57:08", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 510, coOutput: 265, reduction: 48.0, status: "warning"  },
-  { id: "R003", timestamp: "2026-04-21 05:54:33", date: "2026-04-21", time: "05:54:33", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 395, coOutput: 192, reduction: 51.4, status: "normal"   },
-  { id: "R004", timestamp: "2026-04-21 05:51:20", date: "2026-04-21", time: "05:51:20", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 620, coOutput: 298, reduction: 51.9, status: "critical" },
-  { id: "R005", timestamp: "2026-04-21 05:48:44", date: "2026-04-21", time: "05:48:44", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 480, coOutput: 238, reduction: 50.4, status: "warning"  },
-  { id: "R006", timestamp: "2026-04-21 05:45:11", date: "2026-04-21", time: "05:45:11", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 420, coOutput: 205, reduction: 51.2, status: "normal"   },
-  { id: "R007", timestamp: "2026-04-21 05:42:58", date: "2026-04-21", time: "05:42:58", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 380, coOutput: 188, reduction: 50.5, status: "normal"   },
-  { id: "R008", timestamp: "2026-04-21 05:39:30", date: "2026-04-21", time: "05:39:30", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 455, coOutput: 222, reduction: 51.2, status: "warning"  },
-  { id: "R009", timestamp: "2026-04-21 05:36:17", date: "2026-04-21", time: "05:36:17", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 500, coOutput: 248, reduction: 50.4, status: "warning"  },
-  { id: "R010", timestamp: "2026-04-21 05:33:02", date: "2026-04-21", time: "05:33:02", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 410, coOutput: 200, reduction: 51.2, status: "normal"   },
-  { id: "R011", timestamp: "2026-04-21 05:30:45", date: "2026-04-21", time: "05:30:45", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 390, coOutput: 191, reduction: 51.0, status: "normal"   },
-  { id: "R012", timestamp: "2026-04-21 05:27:19", date: "2026-04-21", time: "05:27:19", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 560, coOutput: 275, reduction: 50.9, status: "critical" },
-  { id: "R013", timestamp: "2026-04-20 23:58:44", date: "2026-04-20", time: "23:58:44", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 370, coOutput: 182, reduction: 50.8, status: "normal"   },
-  { id: "R014", timestamp: "2026-04-20 23:55:31", date: "2026-04-20", time: "23:55:31", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 430, coOutput: 211, reduction: 50.9, status: "normal"   },
-  { id: "R015", timestamp: "2026-04-20 23:52:08", date: "2026-04-20", time: "23:52:08", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 490, coOutput: 243, reduction: 50.4, status: "warning"  },
-  { id: "R016", timestamp: "2026-04-20 18:10:22", date: "2026-04-20", time: "18:10:22", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 460, coOutput: 228, reduction: 50.4, status: "warning"  },
-  { id: "R017", timestamp: "2026-04-20 18:07:55", date: "2026-04-20", time: "18:07:55", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 400, coOutput: 197, reduction: 50.8, status: "normal"   },
-  { id: "R018", timestamp: "2026-04-20 18:04:33", date: "2026-04-20", time: "18:04:33", device: "ESP32-002", vehicleName: "Bajaj Boxer",              type: "Motorcycle", plateOrRef: "RAD 112 C",    coInput: 530, coOutput: 262, reduction: 50.6, status: "critical" },
-  { id: "R019", timestamp: "2026-04-19 14:22:10", date: "2026-04-19", time: "14:22:10", device: "ESP32-001", vehicleName: "Toyota Corolla",          type: "Car",        plateOrRef: "RAC 784 B",    coInput: 350, coOutput: 172, reduction: 50.9, status: "normal"   },
-  { id: "R020", timestamp: "2026-04-19 14:19:48", date: "2026-04-19", time: "14:19:48", device: "ESP32-004", vehicleName: "Kimironko Metal Workshop", type: "Industry",   plateOrRef: "IND-KMW-004",  coInput: 420, coOutput: 207, reduction: 50.7, status: "normal"   },
-];
+export interface ChartPoint {
+  date: string;
+  avgInput: number;
+  avgOutput: number;
+  events: number;
+}
 
-export const chartData = [
-  { date: "Apr 15", avgInput: 420, avgOutput: 207, events: 3 },
-  { date: "Apr 16", avgInput: 455, avgOutput: 225, events: 5 },
-  { date: "Apr 17", avgInput: 390, avgOutput: 192, events: 2 },
-  { date: "Apr 18", avgInput: 480, avgOutput: 238, events: 6 },
-  { date: "Apr 19", avgInput: 410, avgOutput: 202, events: 4 },
-  { date: "Apr 20", avgInput: 465, avgOutput: 229, events: 7 },
-  { date: "Apr 21", avgInput: 450, avgOutput: 222, events: 5 },
-];
+const TYPE_LABEL: Record<string, string> = {
+  car: "Car", motorcycle: "Motorcycle", industry: "Industry",
+  CAR: "Car", MOTORCYCLE: "Motorcycle", INDUSTRY: "Industry",
+};
+
+export function mapDeviceToReading(d: ApiDevice, ts: Date): Reading {
+  const input     = Math.round((d.coInput  ?? 0) * 100) / 100;
+  const output    = Math.round((d.coOutput ?? 0) * 100) / 100;
+  const reduction = Math.round(
+    (d.reduction ?? (input > 0 ? ((input - output) / input) * 100 : 0)) * 100
+  ) / 100;
+
+  let status: ReadingStatus = "normal";
+  if (input >= 500) status = "critical";
+  else if (input >= 400 || reduction < 45) status = "warning";
+
+  const date = ts.toISOString().slice(0, 10);
+  const time = ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  return {
+    id:          `${d.id}-${ts.getTime()}`,
+    timestamp:   `${date} ${time}`,
+    date,
+    time,
+    device:      d.id,
+    vehicleName: d.name,
+    type:        TYPE_LABEL[d.type] ?? d.type,
+    plateOrRef:  d.plateOrRef,
+    coInput:     input,
+    coOutput:    output,
+    reduction,
+    status,
+  };
+}
+
+export function buildChartData(readings: Reading[]): ChartPoint[] {
+  const byDate = new Map<string, { inputs: number[]; outputs: number[]; events: number }>();
+
+  for (const r of readings) {
+    const slot = byDate.get(r.date) ?? { inputs: [], outputs: [], events: 0 };
+    slot.inputs.push(r.coInput);
+    slot.outputs.push(r.coOutput);
+    if (r.status !== "normal") slot.events++;
+    byDate.set(r.date, slot);
+  }
+
+  return Array.from(byDate.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-7)
+    .map(([date, { inputs, outputs, events }]) => ({
+      date:      new Date(date).toLocaleDateString("en", { month: "short", day: "numeric" }),
+      avgInput:  Math.round(inputs.reduce((s, v)  => s + v, 0) / inputs.length),
+      avgOutput: Math.round(outputs.reduce((s, v) => s + v, 0) / outputs.length),
+      events,
+    }));
+}

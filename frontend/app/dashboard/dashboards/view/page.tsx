@@ -41,11 +41,17 @@ export default function ViewDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.devices
-      .list()
-      .then((data) => setDevices(data.map(mapApiDevice)))
-      .catch(() => setDevices([]))
-      .finally(() => setLoading(false));
+    function fetchDevices() {
+      api.devices
+        .list()
+        .then((data) => setDevices(data.map(mapApiDevice)))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+
+    fetchDevices();
+    const id = setInterval(fetchDevices, 10_000);
+    return () => clearInterval(id);
   }, []);
 
   const activeDevices  = devices.filter((d) => d.status !== "offline");
@@ -216,6 +222,8 @@ export default function ViewDashboardPage() {
                         <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${device.reduction >= 50 ? "bg-green-500" : "bg-yellow-500"}`}
+                            // dynamic progress bar width — inline style required for runtime values
+                            // eslint-disable-next-line react/forbid-dom-props
                             style={{ width: `${Math.min(device.reduction, 100)}%` }}
                           />
                         </div>

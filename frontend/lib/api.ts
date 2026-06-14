@@ -76,6 +76,20 @@ export interface PostReadingPayload {
   mac?: string;
 }
 
+export interface ApiReading {
+  id: string;
+  deviceId?: string;
+  inputPpm?: number;   // field name used by some backend versions
+  outputPpm?: number;
+  coInput?: number;    // alternative naming
+  coOutput?: number;
+  reduction?: number;
+  status?: string;
+  uptime?: string;
+  createdAt?: string;
+  timestamp?: string;
+}
+
 // ─── Core fetch wrapper ────────────────────────────────────────────────────────
 
 async function http<T>(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<T> {

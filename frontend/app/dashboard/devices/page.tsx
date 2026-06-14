@@ -25,19 +25,26 @@ export default function DevicesPage() {
   });
 
   useEffect(() => {
-    api.devices
-      .list()
-      .then((data) => {
-        if (!Array.isArray(data)) {
-          setError(`Unexpected response: ${JSON.stringify(data).slice(0, 120)}`);
-          return;
-        }
-        setDevices(data.map(mapApiDevice));
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => setLoading(false));
+    function fetchDevices() {
+      api.devices
+        .list()
+        .then((data) => {
+          if (!Array.isArray(data)) {
+            setError(`Unexpected response: ${JSON.stringify(data).slice(0, 120)}`);
+            return;
+          }
+          setDevices(data.map(mapApiDevice));
+          setError(null);
+        })
+        .catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : String(err));
+        })
+        .finally(() => setLoading(false));
+    }
+
+    fetchDevices();
+    const id = setInterval(fetchDevices, 10_000);
+    return () => clearInterval(id);
   }, []);
 
   const summary = {
