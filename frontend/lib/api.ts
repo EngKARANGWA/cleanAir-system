@@ -9,6 +9,7 @@ export interface AuthUser {
   role: string;
   status: string;
   phone?: string;
+  assignedDevices?: string[];
 }
 
 export interface LoginResponse {
@@ -28,6 +29,16 @@ export interface UpdateProfilePayload {
   email: string;
   phone: string;
   password?: string;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  role?: string;
+  status?: string;
+  phone?: string;
+  password?: string;
+  assignedDevices?: string[];
 }
 
 // ─── Device types ─────────────────────────────────────────────────────────────
@@ -155,7 +166,7 @@ export const api = {
         body: JSON.stringify(payload),
       }),
 
-    update: (id: string, payload: Partial<UpdateProfilePayload>) =>
+    update: (id: string, payload: UpdateUserPayload) =>
       http<AuthUser>(ENDPOINTS.users.update(id), {
         method: "PATCH",
         body: JSON.stringify(payload),

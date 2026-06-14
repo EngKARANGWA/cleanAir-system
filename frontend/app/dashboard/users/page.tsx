@@ -1,19 +1,21 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Plus, Users, Pencil, Trash2 } from "lucide-react";
+import { Plus, Users, Pencil, Cpu } from "lucide-react";
 import { RoleBadge, StatusBadge } from "./components/RoleBadge";
 import DeleteUserButton from "./components/DeleteUserButton";
 import DarkModeToggle from "../../components/DarkModeToggle";
+import { api, type AuthUser, type ApiDevice } from "../../../lib/api";
 
-import { api } from "../../../lib/api";
+const VEHICLE_ICON: Record<string, string> = { car: "🚗", motorcycle: "🏍️", industry: "🏭" };
 
-async function fetchUsers() {
+async function fetchData(): Promise<{ users: AuthUser[]; devices: ApiDevice[] }> {
   try {
-    return await api.users.list();
+    const [users, devices] = await Promise.all([api.users.list(), api.devices.list()]);
+    return { users, devices };
   } catch (err) {
     console.error(err);
-    return [];
+    return { users: [], devices: [] };
   }
 }
 
@@ -22,14 +24,43 @@ const avatarColors = [
   "bg-yellow-500", "bg-red-500", "bg-cyan-500",
 ];
 
+function DevicesCell({ deviceIds, devices }: { deviceIds: string[]; devices: ApiDevice[] }) {
+  if (deviceIds.length === 0) {
+    return <span className="text-slate-400 text-xs italic">No devices</span>;
+  }
+
+  const resolved = deviceIds.map((id) => devices.find((d) => d.id === id) ?? { id, name: id, type: "", status: "" });
+  const shown = resolved.slice(0, 2);
+  const extra = resolved.length - 2;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {shown.map((d) => (
+        <Link
+          key={d.id}
+          href={`/dashboard/devices/${d.id}`}
+          className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-500/20 px-2 py-0.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+          title={`${d.name} · ${d.status}`}
+        >
+          <span>{VEHICLE_ICON[d.type] ?? <Cpu className="w-3 h-3 inline" />}</span>
+          {d.name}
+        </Link>
+      ))}
+      {extra > 0 && (
+        <span className="text-xs text-slate-400 font-medium">+{extra} more</span>
+      )}
+    </div>
+  );
+}
+
 export default async function UsersPage() {
-  const users = await fetchUsers();
+  const { users, devices } = await fetchData();
 
   const summary = {
     total:     users.length,
-    active:    users.filter((u: any) => u.status === "ACTIVE").length,
-    inactive:  users.filter((u: any) => u.status === "INACTIVE").length,
-    suspended: users.filter((u: any) => u.status === "SUSPENDED").length,
+    active:    users.filter((u) => u.status === "ACTIVE").length,
+    inactive:  users.filter((u) => u.status === "INACTIVE").length,
+    suspended: users.filter((u) => u.status === "SUSPENDED").length,
   };
 
   return (
@@ -55,7 +86,7 @@ export default async function UsersPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Users",  value: summary.total,     color: "text-slate-900 dark:text-white" },
           { label: "Active",       value: summary.active,    color: "text-green-500" },
@@ -94,12 +125,12 @@ export default async function UsersPage() {
                   </td>
                 </tr>
               )}
-              {users.map((user: any, i: number) => (
+              {users.map((user, i) => (
                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
                   <td className="px-6 py-4">
                     <Link href={`/dashboard/users/${user.id}`} className="flex items-center gap-3 group">
                       <div className={`w-9 h-9 rounded-full ${avatarColors[i % avatarColors.length]} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                        {user.avatar || user.name.charAt(0)}
+                        {(user as { avatar?: string }).avatar ?? user.name.charAt(0)}
                       </div>
                       <div>
                         <p className="font-medium text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">{user.name}</p>
@@ -109,12 +140,19 @@ export default async function UsersPage() {
                   </td>
                   <td className="px-6 py-4"><RoleBadge role={user.role.toLowerCase()} /></td>
                   <td className="px-6 py-4"><StatusBadge status={user.status.toLowerCase()} /></td>
-                  <td className="px-6 py-4">
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{user.assignedDevices ? user.assignedDevices.length : 0}</span>
-                    <span className="text-slate-400 text-xs ml-1">device{(user.assignedDevices ? user.assignedDevices.length : 0) !== 1 ? "s" : ""}</span>
+                  <td className="px-6 py-4 max-w-[220px]">
+                    <DevicesCell deviceIds={user.assignedDevices ?? []} devices={devices} />
                   </td>
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</td>
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{new Date(user.joinedAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {(user as { lastLogin?: string }).lastLogin
+                      ? (() => { try { return new Date((user as { lastLogin?: string }).lastLogin!).toLocaleDateString(); } catch { return (user as { lastLogin?: string }).lastLogin; } })()
+                      : "Never"}
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {(user as { joinedAt?: string }).joinedAt
+                      ? (() => { try { return new Date((user as { joinedAt?: string }).joinedAt!).toLocaleDateString(); } catch { return (user as { joinedAt?: string }).joinedAt; } })()
+                      : "—"}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <Link href={`/dashboard/users/${user.id}/edit`} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all">

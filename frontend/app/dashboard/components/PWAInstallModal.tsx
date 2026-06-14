@@ -97,10 +97,6 @@ export default function PWAInstallModal() {
         <div className="px-6 py-5 space-y-4">
           <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
             <li className="flex items-center gap-3">
-              <Smartphone className="w-4 h-4 text-blue-500 shrink-0" />
-              Works offline — check status without internet
-            </li>
-            <li className="flex items-center gap-3">
               <Download className="w-4 h-4 text-green-500 shrink-0" />
               Installs to your home screen in one tap
             </li>

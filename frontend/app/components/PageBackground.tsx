@@ -1,10 +1,11 @@
 const rand = (seed: number) => { const x = Math.sin(seed + 1) * 10000; return x - Math.floor(x); };
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const STARS = Array.from({ length: 120 }, (_, i) => ({
   big:     rand(i * 4)     < 0.3,
   bigH:    rand(i * 4 + 1) < 0.3,
-  top:     rand(i * 4 + 2) * 60,
-  left:    rand(i * 4 + 3) * 100,
-  opacity: rand(i * 4 + 4) * 0.7 + 0.3,
+  top:     r4(rand(i * 4 + 2) * 60),
+  left:    r4(rand(i * 4 + 3) * 100),
+  opacity: r4(rand(i * 4 + 4) * 0.7 + 0.3),
 }));
 
 export default function PageBackground() {
