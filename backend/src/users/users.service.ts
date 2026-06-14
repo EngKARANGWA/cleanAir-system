@@ -130,8 +130,23 @@ export class UsersService {
       data: updatedData,
     });
 
+    // Sync device assignments when provided
+    if (dto.assignedDevices !== undefined) {
+      await this.prisma.userDevice.deleteMany({ where: { userId: id } });
+      if (dto.assignedDevices.length > 0) {
+        await this.prisma.userDevice.createMany({
+          data: dto.assignedDevices.map((deviceId) => ({ userId: id, deviceId })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    const finalDevices = await this.prisma.userDevice.findMany({ where: { userId: id } });
     const { passwordHash, ...userWithoutPassword } = updatedUser;
-    return userWithoutPassword;
+    return {
+      ...userWithoutPassword,
+      assignedDevices: finalDevices.map((ud) => ud.deviceId),
+    };
   }
 
   async deleteUser(id: string) {
