@@ -126,7 +126,7 @@ export default function OperationalDashboardPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={load}
+            onClick={() => load(true)}
             className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-blue-500 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />

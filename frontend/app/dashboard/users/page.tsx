@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Plus, Users, Pencil, Trash2 } from "lucide-react";
 import { RoleBadge, StatusBadge } from "./components/RoleBadge";

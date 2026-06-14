@@ -62,7 +62,7 @@ export function onForegroundMessage(cb: (title: string, body: string, tag: strin
   const unsub = onMessage(messaging, (payload) => {
     const title = payload.notification?.title ?? "CleanAir Alert";
     const body  = payload.notification?.body  ?? "";
-    const tag   = payload.notification?.tag   ?? "cleanair";
+    const tag   = (payload.data?.["tag"] as string | undefined) ?? "cleanair";
     cb(title, body, tag);
   });
   return unsub;
