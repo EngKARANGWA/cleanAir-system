@@ -24,4 +24,9 @@ export const ENDPOINTS = {
     reboot:   (id: string) =>  `${BASE}/api/devices/${id}/reboot`,
     readings: (id: string) =>  `${BASE}/api/devices/${id}/readings`,
   },
+  alerts: {
+    list:        `${BASE}/api/alerts`,
+    markRead:    (id: number) => `${BASE}/api/alerts/${id}/read`,
+    markAllRead: `${BASE}/api/alerts/read-all`,
+  },
 };

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bell, BellOff, BellRing, CheckCheck,
-  Info, AlertTriangle, XCircle,
+  Info, AlertTriangle, XCircle, Check,
 } from "lucide-react";
-import { initFCM, requestPermission, getPermission } from "../../../lib/fcm";
+import { initFCM, requestPermission, getPermission, showNotification } from "../../../lib/fcm";
 import type { AppNotification } from "../../../lib/useAlertNotifications";
 
 const TYPE_STYLES = {
@@ -23,23 +23,40 @@ export default function NotificationBell({
   onMarkRead?:    (id: string) => void;
   onMarkAllRead?: () => void;
 }) {
-  const [open, setOpen]           = useState(false);
-  const [permission, setPermission] = useState<string>("default");
+  const [open,       setOpen]       = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [enabling,   setEnabling]   = useState(false);
+  const [justEnabled, setJustEnabled] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const unread = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    setPermission(getPermission());
-    // Register service worker + get FCM token (silently, no prompt yet)
-    initFCM().catch(() => {});
+    const perm = getPermission();
+    setPermission(perm);
+    // Only initialize FCM silently if permission is already granted — avoids
+    // Firebase's getToken() triggering a browser permission dialog on mount.
+    if (perm === "granted") initFCM().catch(() => {});
   }, []);
 
   async function handleEnable() {
-    const perm = await requestPermission();
-    setPermission(perm);
-    if (perm === "granted") {
-      await initFCM();
+    setEnabling(true);
+    try {
+      const perm = await requestPermission();
+      setPermission(perm);
+      if (perm === "granted") {
+        // Register SW + get FCM token in background — non-blocking
+        initFCM().catch(() => {});
+        // Fire an immediate confirmation notification so user can see it works
+        await showNotification("CleanAir Alerts Enabled", {
+          body: "You'll receive browser notifications when CO levels are dangerous.",
+          tag:  "cleanair-enabled",
+        });
+        setJustEnabled(true);
+        setTimeout(() => setJustEnabled(false), 3000);
+      }
+    } finally {
+      setEnabling(false);
     }
   }
 
@@ -75,16 +92,20 @@ export default function NotificationBell({
         <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden">
 
           {/* Permission banner */}
-          {permission !== "granted" && (
-            <div className="px-4 py-3 bg-blue-50 dark:bg-blue-500/10 border-b border-blue-100 dark:border-blue-500/20 flex items-center gap-3">
-              <BellOff className="w-4 h-4 text-blue-500 shrink-0" />
+          {permission !== "granted" && permission !== "unsupported" && (
+            <div className={`px-4 py-3 border-b flex items-center gap-3 ${
+              permission === "denied"
+                ? "bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20"
+                : "bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20"
+            }`}>
+              <BellOff className={`w-4 h-4 shrink-0 ${permission === "denied" ? "text-red-500" : "text-blue-500"}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                <p className={`text-xs font-semibold ${permission === "denied" ? "text-red-700 dark:text-red-300" : "text-blue-700 dark:text-blue-300"}`}>
                   {permission === "denied" ? "Notifications blocked" : "Enable push notifications"}
                 </p>
-                <p className="text-[11px] text-blue-500 mt-0.5">
+                <p className={`text-[11px] mt-0.5 ${permission === "denied" ? "text-red-500" : "text-blue-500"}`}>
                   {permission === "denied"
-                    ? "Allow in browser settings to receive CO alerts"
+                    ? "Open browser settings → Site permissions → Allow notifications"
                     : "Get alerted when CO levels are dangerous"}
                 </p>
               </div>
@@ -92,11 +113,22 @@ export default function NotificationBell({
                 <button
                   type="button"
                   onClick={handleEnable}
-                  className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg font-medium hover:bg-blue-500 transition-colors shrink-0"
+                  disabled={enabling}
+                  className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg font-medium hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shrink-0"
                 >
-                  Enable
+                  {enabling ? "…" : "Enable"}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Success flash after enabling */}
+          {justEnabled && (
+            <div className="px-4 py-2.5 bg-green-50 dark:bg-green-500/10 border-b border-green-100 dark:border-green-500/20 flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-500 shrink-0" />
+              <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+                Notifications enabled — check your browser for the test alert!
+              </p>
             </div>
           )}
 

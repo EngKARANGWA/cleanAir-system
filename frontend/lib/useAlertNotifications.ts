@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Device } from "../app/dashboard/devices/data";
 import { showNotification } from "./fcm";
 
@@ -13,14 +13,47 @@ export interface AppNotification {
   read:    boolean;
 }
 
+const LS_KEY = "cleanair_notifications_v2";
+
+function loadPersisted(): AppNotification[] {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? (JSON.parse(raw) as AppNotification[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persist(items: AppNotification[]) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(items.slice(0, 50)));
+  } catch {}
+}
+
 function nowTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export function useAlertNotifications(devices: Device[]) {
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  // Track fired alert keys so each alert only fires once until the condition clears
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    if (typeof window === "undefined") return [];
+    return loadPersisted();
+  });
+
+  // Keys of alert conditions currently active — prevents re-firing until condition clears
   const fired = useRef<Set<string>>(new Set());
+
+  // On mount, restore fired set from persisted unread notifications so we don't
+  // re-fire alerts that were already shown before a page refresh.
+  const initialised = useRef(false);
+  useEffect(() => {
+    if (initialised.current) return;
+    initialised.current = true;
+    const persisted = loadPersisted();
+    persisted.forEach((n) => {
+      if (!n.read) fired.current.add(n.id);
+    });
+  }, []);
 
   useEffect(() => {
     if (devices.length === 0) return;
@@ -33,7 +66,7 @@ export function useAlertNotifications(devices: Device[]) {
       type:     AppNotification["type"],
       title:    string,
       message:  string,
-      critical  = false
+      critical  = false,
     ) {
       if (fired.current.has(key)) return;
       fired.current.add(key);
@@ -42,47 +75,46 @@ export function useAlertNotifications(devices: Device[]) {
     }
 
     for (const dev of devices) {
-
-      // ── Device offline ──────────────────────────────────────────────
+      // ── Device offline ────────────────────────────────────────────────
       const offKey = `off-${dev.id}`;
       if (dev.status === "offline") {
         fire(offKey, "info",
-          `Device Offline — ${dev.name}`,
-          `${dev.id} lost connection. Check network or power.`
+          `Device Offline — ${dev.id}`,
+          `${dev.id} lost connection. Check network or power.`,
         );
       } else {
         fired.current.delete(offKey); // auto-clear when device reconnects
       }
 
-      // ── CO Critical ≥ 500 ppm ───────────────────────────────────────
+      // ── CO Critical ≥ 500 ppm ─────────────────────────────────────────
       const critKey = `crit-${dev.id}`;
       if (dev.coInput >= 500) {
         fire(critKey, "error",
-          `CO Critical — ${dev.name}`,
+          `CO Critical — ${dev.id}`,
           `CO input at ${dev.coInput} ppm on ${dev.plateOrRef}. Exceeds 500 ppm safety threshold.`,
-          true
+          true,
         );
       } else {
         fired.current.delete(critKey);
       }
 
-      // ── CO Warning 400–499 ppm ──────────────────────────────────────
+      // ── CO Warning 400–499 ppm ────────────────────────────────────────
       const warnKey = `warn-${dev.id}`;
       if (dev.coInput >= 400 && dev.coInput < 500) {
         fire(warnKey, "warning",
-          `CO Warning — ${dev.name}`,
-          `CO input at ${dev.coInput} ppm on ${dev.plateOrRef}. Above 400 ppm warning threshold.`
+          `CO Warning — ${dev.id}`,
+          `CO input at ${dev.coInput} ppm on ${dev.plateOrRef}. Above 400 ppm warning threshold.`,
         );
       } else {
         fired.current.delete(warnKey);
       }
 
-      // ── Low purification < 45 % ─────────────────────────────────────
+      // ── Low purification < 45 % ───────────────────────────────────────
       const effKey = `eff-${dev.id}`;
       if (dev.status !== "offline" && dev.coInput > 0 && dev.reduction < 45) {
         fire(effKey, "warning",
-          `Low Purification — ${dev.name}`,
-          `Efficiency at ${dev.reduction}% on ${dev.plateOrRef}, below the 45% target.`
+          `Low Purification — ${dev.id}`,
+          `Efficiency at ${dev.reduction}% on ${dev.plateOrRef}, below the 45% target.`,
         );
       } else {
         fired.current.delete(effKey);
@@ -90,20 +122,35 @@ export function useAlertNotifications(devices: Device[]) {
     }
 
     if (newItems.length > 0) {
-      setNotifications((prev) => [...newItems, ...prev].slice(0, 50));
+      setNotifications((prev) => {
+        const combined = [...newItems, ...prev].slice(0, 50);
+        persist(combined);
+        return combined;
+      });
     }
   }, [devices]);
 
-  const markRead    = (id: string) =>
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+  const markRead = useCallback((id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => n.id === id ? { ...n, read: true } : n);
+      persist(updated);
+      return updated;
+    });
+  }, []);
 
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllRead = useCallback(() => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, read: true }));
+      persist(updated);
+      return updated;
+    });
+  }, []);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setNotifications([]);
     fired.current.clear();
-  };
+    try { localStorage.removeItem(LS_KEY); } catch {}
+  }, []);
 
   return { notifications, markRead, markAllRead, clearAll };
 }

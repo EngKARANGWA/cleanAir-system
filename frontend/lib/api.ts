@@ -87,6 +87,17 @@ export interface PostReadingPayload {
   mac?: string;
 }
 
+export interface ApiAlert {
+  id: number;
+  deviceId: string | null;
+  level: "info" | "warning" | "critical" | "resolved";
+  message: string;
+  location: string | null;
+  isRead: boolean;
+  createdAt: string;
+  device: { id: string; name: string; location: string } | null;
+}
+
 export interface ApiReading {
   id: string;
   deviceId?: string;
@@ -206,5 +217,16 @@ export const api = {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+  },
+
+  alerts: {
+    list: (limit = 50) =>
+      http<ApiAlert[]>(`${ENDPOINTS.alerts.list}?limit=${limit}`, { cache: "no-store" }),
+
+    markRead: (id: number) =>
+      http(ENDPOINTS.alerts.markRead(id), { method: "PATCH" }),
+
+    markAllRead: () =>
+      http(ENDPOINTS.alerts.markAllRead, { method: "PATCH" }),
   },
 };
