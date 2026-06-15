@@ -40,10 +40,10 @@ function DevicesCell({ deviceIds, devices }: { deviceIds: string[]; devices: Api
           key={d.id}
           href={`/dashboard/devices/${d.id}`}
           className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-500/20 px-2 py-0.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
-          title={`${d.name} · ${d.status}`}
+          title={`${d.name} · ${d.id} · ${d.status}`}
         >
           <span>{VEHICLE_ICON[d.type] ?? <Cpu className="w-3 h-3 inline" />}</span>
-          {d.name}
+          <span className="font-mono">{d.id}</span>
         </Link>
       ))}
       {extra > 0 && (

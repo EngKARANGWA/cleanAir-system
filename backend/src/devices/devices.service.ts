@@ -3,27 +3,45 @@ import { DeviceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateDeviceDto {
-  id: string;
   name: string;
+  type?: string;
+  owner?: string;
+  plateOrRef?: string;
   location: string;
   firmware?: string;
-  ipAddress?: string;
-  macAddress?: string;
-  installedAt?: string;
+  ip?: string;
+  mac?: string;
+  safetyStatus?: string;
 }
 
 export interface UpdateDeviceDto {
   name?: string;
+  type?: string;
+  owner?: string;
+  plateOrRef?: string;
   location?: string;
   status?: DeviceStatus;
   firmware?: string;
-  ipAddress?: string;
-  macAddress?: string;
+  ip?: string;
+  mac?: string;
+  safetyStatus?: string;
 }
 
 @Injectable()
 export class DevicesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async generateId(): Promise<string> {
+    const last = await this.prisma.device.findFirst({
+      orderBy: { id: 'desc' },
+      select: { id: true },
+    });
+    if (!last) return 'ESP32-001';
+    const match = last.id.match(/ESP32-(\d+)/i);
+    if (!match) return 'ESP32-001';
+    const next = parseInt(match[1], 10) + 1;
+    return `ESP32-${String(next).padStart(3, '0')}`;
+  }
 
   findAll() {
     return this.prisma.device.findMany({ orderBy: { lastSeen: 'desc' } });
@@ -35,16 +53,20 @@ export class DevicesService {
     return device;
   }
 
-  create(dto: CreateDeviceDto) {
+  async create(dto: CreateDeviceDto) {
+    const id = await this.generateId();
     return this.prisma.device.create({
       data: {
-        id: dto.id,
+        id,
         name: dto.name,
+        type: dto.type ?? 'car',
+        owner: dto.owner,
+        plateOrRef: dto.plateOrRef,
         location: dto.location,
         firmware: dto.firmware,
-        ipAddress: dto.ipAddress,
-        macAddress: dto.macAddress,
-        installedAt: dto.installedAt ? new Date(dto.installedAt) : undefined,
+        ip: dto.ip,
+        mac: dto.mac,
+        safetyStatus: dto.safetyStatus ?? 'NORMAL',
       },
     });
   }
@@ -55,11 +77,15 @@ export class DevicesService {
       where: { id },
       data: {
         name: dto.name,
+        type: dto.type,
+        owner: dto.owner,
+        plateOrRef: dto.plateOrRef,
         location: dto.location,
         status: dto.status,
         firmware: dto.firmware,
-        ipAddress: dto.ipAddress,
-        macAddress: dto.macAddress,
+        ip: dto.ip,
+        mac: dto.mac,
+        safetyStatus: dto.safetyStatus,
       },
     });
   }

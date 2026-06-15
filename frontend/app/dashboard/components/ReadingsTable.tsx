@@ -47,7 +47,7 @@ export default function ReadingsTable({ devices }: { devices: Device[] }) {
                 const status = deviceStatus(d);
                 return (
                   <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
-                    <td className="px-6 py-3 font-medium text-slate-700 dark:text-slate-300">{d.name}</td>
+                    <td className="px-6 py-3 font-mono font-medium text-slate-700 dark:text-slate-300">{d.id}</td>
                     <td className="px-6 py-3 font-semibold text-red-500">
                       {d.coInput > 0 ? d.coInput : "—"}
                     </td>
