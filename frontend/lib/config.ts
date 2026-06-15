@@ -23,6 +23,8 @@ export const ENDPOINTS = {
     remove:   (id: string) =>  `${BASE}/api/devices/${id}`,
     reboot:   (id: string) =>  `${BASE}/api/devices/${id}/reboot`,
     readings: (id: string) =>  `${BASE}/api/devices/${id}/readings`,
+    history:  (id: string, limit: number, type: string) =>
+      `${BASE}/api/devices/${id}/history?limit=${limit}&type=${type}`,
   },
   alerts: {
     list:        `${BASE}/api/alerts`,

@@ -112,6 +112,19 @@ export interface ApiReading {
   timestamp?: string;
 }
 
+export interface HistoryEvent {
+  id: string;           // "alert-76" or "reading-294"
+  type: "alert" | "reading";
+  timestamp: string;
+  status: string;       // "NORMAL" | "WARNING" | "CRITICAL"
+  message: string;
+  data?: {
+    inputPpm: number;
+    outputPpm: number;
+    reductionPercentage: number;
+  };
+}
+
 // ─── Core fetch wrapper ────────────────────────────────────────────────────────
 
 async function http<T>(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<T> {
@@ -217,6 +230,9 @@ export const api = {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+
+    history: (id: string, limit = 50, type = "all") =>
+      http<HistoryEvent[]>(ENDPOINTS.devices.history(id, limit, type), { cache: "no-store" }),
   },
 
   alerts: {
