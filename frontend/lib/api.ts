@@ -38,7 +38,7 @@ export interface UpdateUserPayload {
   status?: string;
   phone?: string;
   password?: string;
-  assignedDevices?: string[];
+  deviceId?: string;   // singular — deployed backend only accepts one device per VIEWER user
 }
 
 // ─── Device types ─────────────────────────────────────────────────────────────
