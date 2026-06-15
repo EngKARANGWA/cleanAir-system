@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DeviceStatus } from '@prisma/client';
+import { AlertLevel, DeviceStatus, ReadingStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateDeviceDto {
@@ -12,6 +12,15 @@ export interface CreateDeviceDto {
   ip?: string;
   mac?: string;
   safetyStatus?: string;
+}
+
+export interface PostReadingDto {
+  inputPpm: number;
+  outputPpm: number;
+  uptime?: string;
+  firmware?: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface UpdateDeviceDto {
@@ -94,5 +103,102 @@ export class DevicesService {
     await this.findOne(id);
     await this.prisma.device.delete({ where: { id } });
     return { success: true };
+  }
+
+  async postReading(deviceId: string, dto: PostReadingDto) {
+    const device = await this.findOne(deviceId);
+
+    const { inputPpm, outputPpm } = dto;
+    const reduction =
+      inputPpm > 0 ? Math.round(((inputPpm - outputPpm) / inputPpm) * 10000) / 100 : 0;
+
+    const readingStatus =
+      inputPpm >= 500 ? ReadingStatus.CRITICAL :
+      inputPpm >= 400 ? ReadingStatus.WARNING :
+      ReadingStatus.NORMAL;
+
+    const deviceStatus = inputPpm >= 400 ? DeviceStatus.WARNING : DeviceStatus.ONLINE;
+
+    const [reading, updatedDevice] = await this.prisma.$transaction([
+      this.prisma.reading.create({
+        data: {
+          deviceId,
+          inputPpm,
+          outputPpm,
+          reductionPercentage: reduction,
+          status: readingStatus,
+        },
+      }),
+      this.prisma.device.update({
+        where: { id: deviceId },
+        data: {
+          coInput: inputPpm,
+          coOutput: outputPpm,
+          reduction,
+          status: deviceStatus,
+          lastSeen: new Date(),
+          ...(dto.uptime   && { uptime:   dto.uptime }),
+          ...(dto.firmware && { firmware: dto.firmware }),
+          ...(dto.ip       && { ip: dto.ip }),
+          ...(dto.mac      && { mac: dto.mac }),
+        },
+      }),
+    ]);
+
+    // Avoid alert spam: skip if a same-level alert for this device was created in the last 5 min
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+    if (inputPpm >= 500) {
+      const recent = await this.prisma.alert.findFirst({
+        where: { deviceId, level: AlertLevel.CRITICAL, createdAt: { gte: fiveMinAgo } },
+      });
+      if (!recent) {
+        await this.prisma.alert.create({
+          data: {
+            deviceId,
+            level: AlertLevel.CRITICAL,
+            message: `CO input at ${inputPpm} ppm on ${device.plateOrRef ?? deviceId}. Exceeds 500 ppm safety threshold.`,
+            location: device.location,
+          },
+        });
+      }
+    } else if (inputPpm >= 400) {
+      const recent = await this.prisma.alert.findFirst({
+        where: { deviceId, level: AlertLevel.WARNING, createdAt: { gte: fiveMinAgo } },
+      });
+      if (!recent) {
+        await this.prisma.alert.create({
+          data: {
+            deviceId,
+            level: AlertLevel.WARNING,
+            message: `CO input at ${inputPpm} ppm on ${device.plateOrRef ?? deviceId}. Above 400 ppm warning threshold.`,
+            location: device.location,
+          },
+        });
+      }
+    }
+
+    if (reduction < 45 && inputPpm > 0) {
+      const recent = await this.prisma.alert.findFirst({
+        where: {
+          deviceId,
+          level: AlertLevel.WARNING,
+          message: { contains: 'purification' },
+          createdAt: { gte: fiveMinAgo },
+        },
+      });
+      if (!recent) {
+        await this.prisma.alert.create({
+          data: {
+            deviceId,
+            level: AlertLevel.WARNING,
+            message: `Low purification efficiency at ${reduction}% on ${device.plateOrRef ?? deviceId}, below the 45% target.`,
+            location: device.location,
+          },
+        });
+      }
+    }
+
+    return { reading, device: updatedDevice };
   }
 }

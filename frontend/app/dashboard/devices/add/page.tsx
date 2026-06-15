@@ -41,7 +41,7 @@ export default function AddDevicePage() {
     try {
       await api.devices.create({
         name: form.name.trim(),
-        type: form.type,
+        type: form.type.toUpperCase(),   // deployed backend requires uppercase: "CAR" | "MOTORCYCLE" | "INDUSTRY"
         owner: form.owner.trim(),
         plateOrRef: form.plateOrRef.trim(),
         location: form.location.trim(),
@@ -92,27 +92,11 @@ export default function AddDevicePage() {
         {/* Installation type */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Installation Type *</label>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { value: "car",        label: "Car",        desc: "Passenger / taxi vehicle" },
-              { value: "motorcycle", label: "Motorcycle", desc: "Moto / boda-boda" },
-              { value: "industry",   label: "Industry",   desc: "Workshop / small factory" },
-            ].map(({ value, label, desc }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, type: value }))}
-                className={`text-left p-3 rounded-xl border-2 transition-all ${
-                  form.type === value
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
-                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                }`}
-              >
-                <p className={`text-sm font-semibold ${form.type === value ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"}`}>{label}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
-              </button>
-            ))}
-          </div>
+          <select className={inputClass} value={form.type} onChange={set("type")} title="Installation type">
+            <option value="car">Car — Passenger / taxi vehicle</option>
+            <option value="motorcycle">Motorcycle — Moto / boda-boda</option>
+            <option value="industry">Industry — Workshop / small factory</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

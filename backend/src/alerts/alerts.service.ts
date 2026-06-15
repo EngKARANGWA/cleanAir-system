@@ -15,6 +15,18 @@ export class AlertsService {
     });
   }
 
+  async markRead(id: number) {
+    return this.prisma.alert.update({
+      where: { id },
+      data: { isRead: true },
+    });
+  }
+
+  async markAllRead() {
+    await this.prisma.alert.updateMany({ data: { isRead: true } });
+    return { success: true };
+  }
+
   getRules() {
     return [
       { id: 1, name: 'High CO Input',     threshold: 50,  level: 'WARNING',  metric: 'inputPpm' },

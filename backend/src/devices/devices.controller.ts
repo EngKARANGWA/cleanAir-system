@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiResponse } from '@nestjs/swagger';
-import { DevicesService, CreateDeviceDto, UpdateDeviceDto } from './devices.service';
+import { DevicesService, CreateDeviceDto, UpdateDeviceDto, PostReadingDto } from './devices.service';
 
 @ApiTags('Devices')
 @Controller('devices')
@@ -60,6 +60,19 @@ export class DevicesController {
   @ApiResponse({ status: 404, description: 'Device not found.' })
   update(@Param('id') id: string, @Body() dto: UpdateDeviceDto) {
     return this.devicesService.update(id, dto);
+  }
+
+  @Post(':id/readings')
+  @ApiOperation({ summary: 'Post a sensor reading for a device (used by ESP32 firmware)' })
+  @ApiParam({ name: 'id', example: 'ESP32-001' })
+  @ApiBody({
+    schema: {
+      example: { inputPpm: 420, outputPpm: 210, uptime: '3d 4h', firmware: 'v1.2.0', ip: '192.168.1.10', mac: 'AA:BB:CC:DD:EE:FF' },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Reading recorded and device state updated.' })
+  postReading(@Param('id') id: string, @Body() dto: PostReadingDto) {
+    return this.devicesService.postReading(id, dto);
   }
 
   @Delete(':id')
