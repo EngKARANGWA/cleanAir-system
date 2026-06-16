@@ -28,7 +28,30 @@ const ROLE_DESC: Record<string, string> = {
 export default function DashboardPage() {
   const [user, setUser]       = useState<{ name?: string; email?: string; role?: string } | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
-  const { notifications, markRead, markAllRead } = useAlertNotifications(devices);
+
+  // Read role + assigned devices synchronously so filtering is available on first render
+  const [sessionRole] = useState<string>(() => {
+    if (typeof window === "undefined") return "VIEWER";
+    try {
+      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return (u.role ?? "VIEWER").toUpperCase();
+    } catch { return "VIEWER"; }
+  });
+
+  const [assignedDeviceIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return u.assignedDevices ?? [];
+    } catch { return []; }
+  });
+
+  // Viewers only see and get alerts for their own assigned devices
+  const visibleDevices = sessionRole === "VIEWER"
+    ? devices.filter((d) => assignedDeviceIds.includes(d.id))
+    : devices;
+
+  const { notifications, markRead, markAllRead } = useAlertNotifications(visibleDevices);
 
   useEffect(() => {
     try {
@@ -49,11 +72,11 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
-  const role        = (user?.role ?? "VIEWER").toUpperCase();
+  const role        = (user?.role ?? sessionRole).toUpperCase();
   const displayName = user?.name ?? user?.email ?? "User";
 
-  const activeDevices = devices.filter((d) => d.status !== "offline");
-  const onlineCount   = devices.filter((d) => d.status === "online").length;
+  const activeDevices = visibleDevices.filter((d) => d.status !== "offline");
+  const onlineCount   = visibleDevices.filter((d) => d.status === "online").length;
 
   const avgInput = activeDevices.length
     ? Math.round(activeDevices.reduce((s, d) => s + d.coInput,  0) / activeDevices.length * 100) / 100
@@ -64,8 +87,8 @@ export default function DashboardPage() {
   const avgReduction = activeDevices.length
     ? (activeDevices.reduce((s, d) => s + d.reduction, 0) / activeDevices.length).toFixed(2)
     : "0.00";
-  const uptimePct = devices.length
-    ? Math.round((onlineCount / devices.length) * 100)
+  const uptimePct = visibleDevices.length
+    ? Math.round((onlineCount / visibleDevices.length) * 100)
     : 0;
 
   if (role === "OPERATOR") {
@@ -75,7 +98,7 @@ export default function DashboardPage() {
           <NotificationBell notifications={notifications} onMarkRead={markRead} onMarkAllRead={markAllRead} />
           <DarkModeToggle />
         </div>
-        <OperatorPanel operatorName={displayName} devices={devices} />
+        <OperatorPanel operatorName={displayName} devices={visibleDevices} />
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Live Sensor Readings</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -137,10 +160,10 @@ export default function DashboardPage() {
       {/* Alerts + Readings */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1">
-          <AlertsList devices={devices} />
+          <AlertsList devices={visibleDevices} />
         </div>
         <div className="xl:col-span-2">
-          <ReadingsTable devices={devices} />
+          <ReadingsTable devices={visibleDevices} />
         </div>
       </div>
 
@@ -150,11 +173,13 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Registered Devices</h2>
           <a href="/dashboard/devices" className="text-sm text-blue-500 hover:underline">View all</a>
         </div>
-        {devices.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-sm">Loading devices…</div>
+        {visibleDevices.length === 0 ? (
+          <div className="text-center py-8 text-slate-400 text-sm">
+            {devices.length === 0 ? "Loading devices…" : "No devices assigned to your account."}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {devices.map((device) => (
+            {visibleDevices.map((device) => (
               <DeviceCard key={device.id} device={device} />
             ))}
           </div>
