@@ -55,27 +55,47 @@ function exportCsv(events: HistoryEvent[], deviceId: string) {
 }
 
 export default function HistoryPage() {
-  const [devices, setDevices]             = useState<ApiDevice[]>([]);
-  const [deviceId, setDeviceId]           = useState("");
-  const [limit, setLimit]                 = useState(50);
-  const [type, setType]                   = useState<"all" | "reading" | "alert">("all");
-  const [events, setEvents]               = useState<HistoryEvent[]>([]);
-  const [loading, setLoading]             = useState(false);
+  const [devices, setDevices]               = useState<ApiDevice[]>([]);
+  const [deviceId, setDeviceId]             = useState("");
+  const [limit, setLimit]                   = useState(50);
+  const [type, setType]                     = useState<"all" | "reading" | "alert">("all");
+  const [events, setEvents]                 = useState<HistoryEvent[]>([]);
+  const [loading, setLoading]               = useState(false);
   const [loadingDevices, setLoadingDevices] = useState(true);
-  const [error, setError]                 = useState("");
-  const [page, setPage]                   = useState(1);
-  const [search, setSearch]               = useState("");
+  const [error, setError]                   = useState("");
+  const [page, setPage]                     = useState(1);
+  const [search, setSearch]                 = useState("");
 
-  // Load device list once on mount
+  // Read role + assigned devices from stored session
+  const [role] = useState<string>(() => {
+    if (typeof window === "undefined") return "VIEWER";
+    try {
+      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return (u.role ?? "VIEWER").toUpperCase();
+    } catch { return "VIEWER"; }
+  });
+
+  const [assignedDeviceIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return u.assignedDevices ?? [];
+    } catch { return []; }
+  });
+
+  // Load device list once on mount; viewers only see their own devices
   useEffect(() => {
     api.devices
       .list()
       .then((devs) => {
-        setDevices(devs);
-        if (devs.length > 0) setDeviceId(devs[0].id);
+        const isViewer = role === "VIEWER";
+        const visible  = isViewer ? devs.filter((d) => assignedDeviceIds.includes(d.id)) : devs;
+        setDevices(visible);
+        if (visible.length > 0) setDeviceId(visible[0].id);
       })
       .catch(() => {})
       .finally(() => setLoadingDevices(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadHistory = async (id = deviceId) => {
@@ -156,7 +176,7 @@ export default function HistoryPage() {
               {loadingDevices ? (
                 <option>Loading devices…</option>
               ) : devices.length === 0 ? (
-                <option>No devices found</option>
+                <option>{role === "VIEWER" ? "No devices assigned to your account" : "No devices found"}</option>
               ) : (
                 devices.map((d) => (
                   <option key={d.id} value={d.id}>

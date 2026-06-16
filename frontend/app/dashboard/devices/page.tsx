@@ -11,10 +11,9 @@ import { mapApiDevice, type Device } from "./data";
 import { useAlertNotifications } from "../../../lib/useAlertNotifications";
 
 export default function DevicesPage() {
-  const [devices, setDevices]   = useState<Device[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error,   setError]     = useState<string | null>(null);
-  const { notifications, markRead, markAllRead } = useAlertNotifications(devices);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState<string | null>(null);
 
   const [role] = useState<string>(() => {
     if (typeof window === "undefined") return "VIEWER";
@@ -25,6 +24,25 @@ export default function DevicesPage() {
       return "VIEWER";
     }
   });
+
+  const [assignedDeviceIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+      return user.assignedDevices ?? [];
+    } catch {
+      return [];
+    }
+  });
+
+  const isViewer = role === "VIEWER";
+
+  // Viewers only see their own assigned devices
+  const visibleDevices = isViewer
+    ? devices.filter((d) => assignedDeviceIds.includes(d.id))
+    : devices;
+
+  const { notifications, markRead, markAllRead } = useAlertNotifications(visibleDevices);
 
   useEffect(() => {
     function fetchDevices() {
@@ -50,13 +68,11 @@ export default function DevicesPage() {
   }, []);
 
   const summary = {
-    total:   devices.length,
-    online:  devices.filter((d) => d.status === "online").length,
-    offline: devices.filter((d) => d.status === "offline").length,
-    warning: devices.filter((d) => d.status === "warning").length,
+    total:   visibleDevices.length,
+    online:  visibleDevices.filter((d) => d.status === "online").length,
+    offline: visibleDevices.filter((d) => d.status === "offline").length,
+    warning: visibleDevices.filter((d) => d.status === "warning").length,
   };
-
-  const isViewer = role === "VIEWER";
 
   return (
     <div className="space-y-8">
@@ -106,11 +122,13 @@ export default function DevicesPage() {
         <div className="text-center py-12 text-slate-400">Loading devices…</div>
       ) : error ? (
         <div className="text-center py-12 text-red-500 text-sm whitespace-pre-wrap break-all">{error}</div>
-      ) : devices.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">No devices registered yet.</div>
+      ) : visibleDevices.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          {isViewer ? "No devices assigned to your account yet." : "No devices registered yet."}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
-          {devices.map((device) => (
+          {visibleDevices.map((device) => (
             <DeviceCard key={device.id} device={device} />
           ))}
         </div>
