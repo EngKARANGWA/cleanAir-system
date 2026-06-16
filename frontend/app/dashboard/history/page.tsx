@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, RefreshCw, Download } from "lucide-react";
 import DarkModeToggle from "../../components/DarkModeToggle";
 import { api, type ApiDevice, type HistoryEvent } from "../../../lib/api";
+import { auth } from "../../../lib/auth";
 
 const PAGE_SIZE = 15;
 
@@ -66,35 +67,36 @@ export default function HistoryPage() {
   const [page, setPage]                     = useState(1);
   const [search, setSearch]                 = useState("");
 
-  // Read role + assigned devices from stored session
-  const [role] = useState<string>(() => {
-    if (typeof window === "undefined") return "VIEWER";
-    try {
-      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
-      return (u.role ?? "VIEWER").toUpperCase();
-    } catch { return "VIEWER"; }
-  });
+  const sessionRole = (auth.get()?.role ?? "VIEWER").toUpperCase();
+  const isViewer    = sessionRole === "VIEWER";
 
-  const [assignedDeviceIds] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
-      return u.assignedDevices ?? [];
-    } catch { return []; }
-  });
-
-  // Load device list once on mount; viewers only see their own devices
+  // Load device list once on mount
+  // Viewers: fetch their own profile to get the live assigned device IDs, then fetch only those
+  // Admins/Operators: fetch all devices
   useEffect(() => {
-    api.devices
-      .list()
-      .then((devs) => {
-        const isViewer = role === "VIEWER";
-        const visible  = isViewer ? devs.filter((d) => assignedDeviceIds.includes(d.id)) : devs;
-        setDevices(visible);
-        if (visible.length > 0) setDeviceId(visible[0].id);
-      })
-      .catch(() => {})
-      .finally(() => setLoadingDevices(false));
+    async function loadDevices() {
+      try {
+        if (isViewer) {
+          const userId = auth.get()?.id;
+          if (!userId) { setLoadingDevices(false); return; }
+          const profile    = await api.users.get(userId);
+          const assignedIds: string[] = profile.assignedDevices ?? [];
+          if (assignedIds.length === 0) { setLoadingDevices(false); return; }
+          const devList = await Promise.all(assignedIds.map((id) => api.devices.get(id)));
+          setDevices(devList);
+          setDeviceId(devList[0].id);
+        } else {
+          const devList = await api.devices.list();
+          setDevices(devList);
+          if (devList.length > 0) setDeviceId(devList[0].id);
+        }
+      } catch {
+        // silently ignore
+      } finally {
+        setLoadingDevices(false);
+      }
+    }
+    loadDevices();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -176,7 +178,7 @@ export default function HistoryPage() {
               {loadingDevices ? (
                 <option>Loading devices…</option>
               ) : devices.length === 0 ? (
-                <option>{role === "VIEWER" ? "No devices assigned to your account" : "No devices found"}</option>
+                <option>{isViewer ? "No devices assigned to your account" : "No devices found"}</option>
               ) : (
                 devices.map((d) => (
                   <option key={d.id} value={d.id}>

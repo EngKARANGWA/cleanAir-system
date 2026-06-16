@@ -18,12 +18,13 @@ import {
 } from "lucide-react";
 
 const ALL_NAV = [
-  { label: "Overview",              href: "/dashboard",                          icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
-  { label: "Devices",               href: "/dashboard/devices",                  icon: Cpu,             roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
-  { label: "Users",                 href: "/dashboard/users",                    icon: Users,           roles: ["ADMIN"],                       group: "main" },
-  { label: "History",               href: "/dashboard/history",                  icon: History,         roles: ["ADMIN", "OPERATOR"],            group: "main" },
-  { label: "Alerts",                href: "/dashboard/alerts",                   icon: BellRing,        roles: ["ADMIN", "OPERATOR"],            group: "main" },
-  { label: "Settings",              href: "/dashboard/settings",                 icon: Settings,        roles: ["ADMIN"],                       group: "main" },
+  { label: "Overview", href: "/dashboard",                     icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR"], group: "main" },
+  { label: "Overview", href: "/dashboard/dashboards/view",     icon: LayoutDashboard, roles: ["VIEWER"],            group: "main" },
+  { label: "Devices",  href: "/dashboard/devices",             icon: Cpu,             roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
+  { label: "Users",    href: "/dashboard/users",               icon: Users,           roles: ["ADMIN"],             group: "main" },
+  { label: "History",  href: "/dashboard/history",             icon: History,         roles: ["ADMIN", "OPERATOR", "VIEWER"], group: "main" },
+  { label: "Alerts",   href: "/dashboard/alerts",              icon: BellRing,        roles: ["ADMIN", "OPERATOR"], group: "main" },
+  { label: "Settings", href: "/dashboard/settings",            icon: Settings,        roles: ["ADMIN"],             group: "main" },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
@@ -120,7 +121,7 @@ export default function DashboardSidebar() {
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <div className="space-y-1">
             {navItems.map(({ label, href, icon: Icon }) => {
-              const active = pathname === href;
+              const active = pathname === href || pathname.startsWith(href + "/") && href !== "/dashboard";
               return (
                 <Link
                   key={href}
